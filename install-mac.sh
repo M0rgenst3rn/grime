@@ -7,10 +7,11 @@ set -euo pipefail
 HERE="$(cd "$(dirname "$0")" && pwd)"
 UPIA="/Library/Application Support/Adobe/Adobe Desktop Common/RemoteComponents/UPI/UnifiedPluginInstallerAgent/UnifiedPluginInstallerAgent.app/Contents/MacOS/UnifiedPluginInstallerAgent"
 
-rm -f "$HERE/dist/MS Distress-Pro.ccx"
+rm -f "$HERE/dist/MS-Distress.ccx"
 mkdir -p "$HERE/dist"
-(cd "$HERE/distress" && zip -qr "$HERE/dist/MS Distress-Pro.ccx" . -x '.*')
+(cd "$HERE/distress" && zip -qr "$HERE/dist/MS-Distress.ccx" . -x '.*')
 
 "$UPIA" --remove "MS Distress" >/dev/null 2>&1 || true
-"$UPIA" --install "$HERE/dist/MS Distress-Pro.ccx"
+"$UPIA" --remove "MS Distress" >/dev/null 2>&1 || true
+"$UPIA" --install "$HERE/dist/MS-Distress.ccx"
 echo "Fertig. Photoshop neu starten > Zusatzmodule (Plugins) > MS Distress"
