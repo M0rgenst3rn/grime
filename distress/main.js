@@ -639,16 +639,20 @@ async function runSelfTest() {
     params = Object.assign({}, D, { texture: "rust" });
     await selectLayersModal(ids);
     liveLast = null;
-    const h0 = doc.historyStates.length;
+    // Nicht die Anzahl zählen (bleibt am Protokoll-Limit konstant), sondern prüfen, dass direkt vor
+    // dem letzten Live-Schritt wieder der Stand von vor dem ersten Live-Update liegt.
+    const s0 = historyStateId(doc);
     await applyDistress(true);
-    const h1 = doc.historyStates.length;
     params = Object.assign({}, D, { texture: "speckle", colorEnabled: true });
     await applyDistress(true);
     params = Object.assign({}, D, { texture: "halftone", colorEnabled: false });
     await applyDistress(true);
-    const h2 = doc.historyStates.length;
+    const states = doc.historyStates;
+    const ai = states.findIndex((h) => h.id === historyStateId(doc));
+    const before = ai > 0 ? states[ai - 1].id : null;
     const rl = await verifyAll(doc, layers);
-    results.push({ test: "Live: Protokoll zusammengefasst", ok: h1 === h0 + 1 && h2 === h1, details: { h0, h1, h2 } });
+    results.push({ test: "Live: Protokoll zusammengefasst", ok: before === s0 && states[ai].name === "MS Distress Live",
+      details: { vorErstemLive: s0, vorLetztemLive: before, aktuell: ai >= 0 ? states[ai].name : null } });
     results.push({ test: "Live: Canvas = letzte Einstellung (Farbe aus)", ok: rl.every((x) => x.ok), details: rl });
 
     // Rückgängig: ein Schritt zurück entfernt das Live-Ergebnis
