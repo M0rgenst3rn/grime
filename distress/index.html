@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="layout">
+  <div class="top">
+    <div class="header">
+      <span class="title">DISTRESS <b>PRO</b></span>
+      <span id="layerName" class="layer-name">–</span>
+    </div>
+
+    <div id="previewBox" class="preview-box">
+      <img id="preview" class="hidden">
+      <div id="previewMsg" class="preview-msg">Ebene auswählen…</div>
+    </div>
+    <div class="row between small">
+      <label class="check"><input type="checkbox" id="previewDark"> Dunkel</label>
+      <label class="check live"><input type="checkbox" id="liveCanvas"> Live auf Canvas</label>
+      <sp-action-button size="s" quiet id="refreshPreview">↻ Vorschau</sp-action-button>
+    </div>
+
+    <div class="actions">
+      <sp-button size="s" variant="cta" id="apply">Distress anwenden</sp-button>
+      <sp-button size="s" variant="secondary" id="remove">Entfernen</sp-button>
+      <sp-action-button size="s" quiet id="verify" title="Vergleicht den Canvas mit den aktuellen Einstellungen">Prüfen</sp-action-button>
+    </div>
+    <div id="status" class="status"></div>
+  </div>
+  <div class="scroller">
+  <div class="wrap">
+    <div class="section first">
+      <div class="section-title">Textur <span id="texName" class="muted"></span></div>
+      <div id="texGrid" class="tex-grid"></div>
+      <div id="customRow" class="hidden">
+        <select id="customLayer"></select>
+        <div class="hint">Dunkle Bereiche der gewählten Ebene tragen ab. Tipp: Ebene danach ausblenden.</div>
+      </div>
+      <div id="secTexture"></div>
+      <div class="row between">
+        <label class="check"><input type="checkbox" id="invert"> Textur invertieren</label>
+        <sp-action-button size="s" quiet id="deleteImgTex" class="hidden">Bild-Textur löschen</sp-action-button>
+      </div>
+      <div class="sub">
+        <div class="row"><span class="ctl-label">Textur 2</span><select id="texture2" class="grow"></select></div>
+        <div id="tex2Controls" class="hidden">
+          <div id="secTexture2"></div>
+          <div class="row two">
+            <select id="texture2Mode"></select>
+            <label class="check"><input type="checkbox" id="texture2Invert"> invertieren</label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Shape</div>
+      <div id="secShape"></div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Inner</div>
+      <div id="secInner"></div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Fade</div>
+      <div id="secFade"></div>
+      <div class="row two">
+        <select id="fadeStyle"></select>
+        <select id="fadeTarget">
+          <option value="distress">auf Distress</option>
+          <option value="opacity">auf Deckkraft</option>
+          <option value="both">auf beides</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Shape Color</div>
+      <div class="row">
+        <label class="check grow"><input type="checkbox" id="colorEnabled"> Einfärben</label>
+        <div id="swatch" class="swatch" title="Klicken für Farbwähler"></div>
+        <input type="text" id="colorHex" class="hex" maxlength="7">
+        <sp-action-button size="s" quiet id="fgColor" title="Vordergrundfarbe übernehmen">VG</sp-action-button>
+      </div>
+      <div id="secColor"></div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Random Seed</div>
+      <div class="row">
+        <input type="text" id="seed" class="seed">
+        <sp-action-button size="s" id="dice">🎲 Würfeln</sp-action-button>
+        <label class="check"><input type="checkbox" id="varySeed"> pro Ebene</label>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Presets</div>
+      <select id="presetSelect"></select>
+      <div class="row">
+        <input type="text" id="presetName" class="grow" placeholder="Eigenes Preset…">
+        <sp-action-button size="s" id="presetSave">Speichern</sp-action-button>
+        <sp-action-button size="s" quiet id="presetDelete">Löschen</sp-action-button>
+      </div>
+      <div class="row">
+        <sp-action-button size="s" quiet id="resetAll">Alles zurücksetzen</sp-action-button>
+        <sp-action-button size="s" quiet id="selfTest" title="Legt ein Testdokument an und prüft alle Funktionen">Selbsttest</sp-action-button>
+      </div>
+    </div>
+  </div>
+  </div>
+  </div>
+  <script src="main.js"></script>
+</body>
+</html>
