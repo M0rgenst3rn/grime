@@ -140,4 +140,5 @@ python3 tools/make-showcase.py
 
 ---
 
-<p align="center"><sub>MS Distress</sub></p>
+<p align="center"><sub>MS Distress<br>
+Entwickelt von Linus Leinberger</sub></p>
