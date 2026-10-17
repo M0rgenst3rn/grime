@@ -4,7 +4,8 @@
 
 <p align="center">
   <b>Distressed-, Grunge- und Print-Looks für Photoshop – mit einem Klick, nicht-destruktiv, auf Text, Formen und jeder Ebene.</b><br>
-  <sub>Photoshop 2023 (24.2) oder neuer · UXP-Panel · macOS & Windows</sub>
+  <sub>Photoshop 2023 (24.2) oder neuer · UXP-Panel · macOS & Windows</sub><br>
+  <sub><b>MS</b> steht für <b>Morgenstern</b>: freie Photoshop-Tools · <b>MS Distress</b> · <a href="https://github.com/M0rgenst3rn/ms-printer">MS Printer</a> · <a href="https://github.com/M0rgenst3rn/ms-render">MS Render</a></sub>
 </p>
 
 ---
@@ -155,5 +156,5 @@ Verbindung zu Adobe.
 
 ---
 
-<p align="center"><sub>MS Distress<br>
+<p align="center"><sub>MS Distress · ein Tool von <b>Morgenstern</b><br>
 Entwickelt von Linus Leinberger</sub></p>
