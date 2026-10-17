@@ -138,6 +138,18 @@ Die Bilder dieser README neu erzeugen (braucht Python mit Pillow):
 python3 tools/make-showcase.py
 ```
 
+## Fehler gefunden? Ideen?
+
+Melde dich gern! Am einfachsten über **[Issues](https://github.com/M0rgenst3rn/ms-distress/issues)** hier auf GitHub:
+**New issue** klicken und kurz beschreiben, was passiert ist. Hilfreich sind Photoshop-Version, Betriebssystem
+und gern ein Screenshot. Dafür brauchst du nur ein kostenloses GitHub-Konto. Verbesserungsvorschläge und
+Wünsche für neue Funktionen sind genauso willkommen.
+
+## Lizenz
+
+[MIT](LICENSE): Du darfst den Code frei ansehen, verändern, weitergeben und auch kommerziell nutzen.
+Einzige Bedingung: Der Lizenzhinweis bleibt in Kopien enthalten.
+
 ---
 
 <p align="center"><sub>MS Distress<br>
