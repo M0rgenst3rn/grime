@@ -11,7 +11,7 @@ rm -f "$HERE/dist/MS-Distress.ccx"
 mkdir -p "$HERE/dist"
 (cd "$HERE/distress" && zip -qr "$HERE/dist/MS-Distress.ccx" . -x '.*')
 
-"$UPIA" --remove "MS Distress" >/dev/null 2>&1 || true
-"$UPIA" --remove "MS Distress" >/dev/null 2>&1 || true
+# nur entfernen, wenn installiert (ein fehlendes Plugin zu entfernen lässt den Installer hängen)
+if "$UPIA" --list all 2>/dev/null | grep -q "MS Distress "; then "$UPIA" --remove "MS Distress" >/dev/null 2>&1 || true; fi
 "$UPIA" --install "$HERE/dist/MS-Distress.ccx"
 echo "Fertig. Photoshop neu starten > Zusatzmodule (Plugins) > MS Distress"
