@@ -1,5 +1,5 @@
-// Rendert alle Texturen auf einen Test-Schriftzug -> PNG, um die Engine ohne Photoshop zu prüfen.
-// Aufruf: node tools/render-test.js <ausgabe.png> [json-params]
+// Renders every texture onto test lettering -> PNG, to check the engine without Photoshop.
+// Usage: node tools/render-test.js <output.png> [json-params]
 const fs = require("fs");
 const path = require("path");
 const Core = require(path.join(__dirname, "..", "distress", "core.js"));

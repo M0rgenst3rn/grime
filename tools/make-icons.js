@@ -1,4 +1,4 @@
-// Erzeugt die Plugin-Icons (ein "verwittertes" D) mit der eigenen Engine.
+// Creates the plugin icons (a "weathered" D) with its own engine.
 const fs = require("fs");
 const path = require("path");
 const Core = require(path.join(__dirname, "..", "distress", "core.js"));
@@ -11,7 +11,7 @@ function icon(size, file) {
   const alpha = new Uint8Array(size * size);
   const m = size * 0.16, stroke = size * 0.2;
   for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) {
-    // Buchstabe D: linker Balken + Halbkreis-Ring
+    // letter D: left bar + half-ring
     const cx = size * 0.42, cy = size / 2, r = size / 2 - m;
     const inBar = x >= m && x < m + stroke && y >= m && y < size - m;
     const dx = x - cx, dy = y - cy, d = Math.sqrt(dx * dx + dy * dy);

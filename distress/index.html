@@ -15,19 +15,19 @@
 
     <div id="previewBox" class="preview">
       <img id="preview" class="hidden">
-      <div id="previewMsg" class="preview-msg">Ebene auswählen…</div>
+      <div id="previewMsg" class="preview-msg">Select a layer…</div>
       <div class="preview-tools">
         <span></span>
-        <div class="switch small" data-for="previewDark" data-kind="small" title="Vorschau auf dunklem Grund"><span class="knob"></span><span class="sw-label">Dunkel</span></div>
+        <div class="switch small" data-for="previewDark" data-kind="small" title="Preview on a dark background"><span class="knob"></span><span class="sw-label">Dark</span></div>
         <input type="checkbox" id="previewDark" class="hidden">
       </div>
     </div>
 
     <div class="actions">
-      <div class="btn primary" id="apply">Anwenden</div>
-      <div class="switch" data-for="liveCanvas" title="Änderungen sofort auf der Ebene zeigen"><span class="knob"></span><span class="sw-label">Live</span></div>
+      <div class="btn primary" id="apply">Apply</div>
+      <div class="switch" data-for="liveCanvas" title="Show changes on the layer right away"><span class="knob"></span><span class="sw-label">Live</span></div>
       <input type="checkbox" id="liveCanvas" class="hidden">
-      <div class="btn ghost" id="remove" title="Distress von der Ebene entfernen">Entfernen</div>
+      <div class="btn ghost" id="remove" title="Remove the distress from the layer">Remove</div>
     </div>
     <div id="status" class="status"></div>
   </div>
@@ -41,92 +41,92 @@
     </div>
 
     <div class="sec" data-sec="texture">
-      <div class="sec-head"><span class="sec-title">Textur</span><span id="texName" class="sec-meta"></span><span class="chev c-open">–</span><span class="chev c-closed">+</span></div>
+      <div class="sec-head"><span class="sec-title">Texture</span><span id="texName" class="sec-meta"></span><span class="chev c-open">–</span><span class="chev c-closed">+</span></div>
       <div class="sec-body">
         <div class="seg" id="slotSeg"></div>
         <div id="texGrid" class="tiles tex-grid"></div>
         <div class="row"><div class="btn small ghost" id="texMore"></div></div>
         <div id="customRow" class="subgroup">
           <div id="customLayer" class="layer-list"></div>
-          <div class="hint">Dunkle Bereiche der gewählten Ebene tragen ab. Tipp: Ebene danach ausblenden.</div>
+          <div class="hint">Dark areas of the chosen layer wear away. Tip: hide that layer afterwards.</div>
         </div>
         <div id="slot1">
           <div id="secTexture"></div>
-          <div class="switch line" data-for="invert"><span class="knob"></span><span class="sw-label">Textur umkehren</span></div>
+          <div class="switch line" data-for="invert"><span class="knob"></span><span class="sw-label">Invert texture</span></div>
           <input type="checkbox" id="invert" class="hidden">
-          <div class="btn small ghost hidden" id="deleteImgTex">Bild-Textur löschen</div>
+          <div class="btn small ghost hidden" id="deleteImgTex">Delete image texture</div>
         </div>
         <div id="slot2">
-          <div id="tex2Empty" class="empty">Keine zweite Textur – wähle oben eine aus, um zwei zu mischen.</div>
+          <div id="tex2Empty" class="empty">No second texture – pick one above to mix two.</div>
           <div id="tex2Controls">
             <div id="secTexture2"></div>
-            <div class="field stack"><span class="field-label">Mischen</span><div class="seg" id="texture2ModeSeg"></div></div>
-            <div class="switch line" data-for="texture2Invert"><span class="knob"></span><span class="sw-label">Umkehren</span></div>
+            <div class="field stack"><span class="field-label">Mix</span><div class="seg" id="texture2ModeSeg"></div></div>
+            <div class="switch line" data-for="texture2Invert"><span class="knob"></span><span class="sw-label">Invert</span></div>
             <input type="checkbox" id="texture2Invert" class="hidden">
-            <div class="btn small ghost" id="clearTex2">Zweite entfernen</div>
+            <div class="btn small ghost" id="clearTex2">Remove second</div>
           </div>
         </div>
       </div>
     </div>
 
     <div class="sec" data-sec="wear">
-      <div class="sec-head"><span class="sec-title">Abrieb</span><span class="sec-meta">Kante und Fläche</span><span class="chev c-open">–</span><span class="chev c-closed">+</span></div>
+      <div class="sec-head"><span class="sec-title">Wear</span><span class="sec-meta">edge and surface</span><span class="chev c-open">–</span><span class="chev c-closed">+</span></div>
       <div class="sec-body">
         <div id="secShape"></div>
       </div>
     </div>
 
     <div class="sec" data-sec="color">
-      <div class="sec-head"><span class="sec-title">Farbe</span><span id="colorMeta" class="sec-meta"></span><span class="chev c-open">–</span><span class="chev c-closed">+</span></div>
+      <div class="sec-head"><span class="sec-title">Colour</span><span id="colorMeta" class="sec-meta"></span><span class="chev c-open">–</span><span class="chev c-closed">+</span></div>
       <div class="sec-body">
         <div class="row">
-          <div class="switch line grow" data-for="colorEnabled"><span class="knob"></span><span class="sw-label">Einfärben</span></div>
+          <div class="switch line grow" data-for="colorEnabled"><span class="knob"></span><span class="sw-label">Colourise</span></div>
           <input type="checkbox" id="colorEnabled" class="hidden">
-          <div id="swatch" class="swatch" title="Farbe wählen"></div>
-          <div class="btn small ghost" id="fgColor" title="Vordergrundfarbe aus Photoshop übernehmen">Vordergrund</div>
+          <div id="swatch" class="swatch" title="Choose colour"></div>
+          <div class="btn small ghost" id="fgColor" title="Use Photoshop's foreground colour">Foreground</div>
         </div>
         <div id="secColor"></div>
       </div>
     </div>
 
     <div class="sec" data-sec="fade">
-      <div class="sec-head"><span class="sec-title">Verlauf</span><span class="sec-meta">ausblenden zu einer Seite</span><span class="chev c-open">–</span><span class="chev c-closed">+</span></div>
+      <div class="sec-head"><span class="sec-title">Fade</span><span class="sec-meta">fade out towards one side</span><span class="chev c-open">–</span><span class="chev c-closed">+</span></div>
       <div class="sec-body">
         <div id="secFade"></div>
         <div id="fadeOpts" class="subgroup">
-          <div class="field stack"><span class="field-label">Richtung</span><div class="seg wrap" id="fadeStyleSeg"></div></div>
-          <div class="field stack"><span class="field-label">Wirkt auf</span><div class="seg" id="fadeTargetSeg"></div></div>
+          <div class="field stack"><span class="field-label">Direction</span><div class="seg wrap" id="fadeStyleSeg"></div></div>
+          <div class="field stack"><span class="field-label">Affects</span><div class="seg" id="fadeTargetSeg"></div></div>
         </div>
       </div>
     </div>
 
     <div class="sec" data-sec="fine">
-      <div class="sec-head"><span class="sec-title">Feintuning</span><span class="sec-meta">Winkel, Kante, Übergang</span><span class="chev c-open">–</span><span class="chev c-closed">+</span></div>
+      <div class="sec-head"><span class="sec-title">Fine-tuning</span><span class="sec-meta">angle, edge, transition</span><span class="chev c-open">–</span><span class="chev c-closed">+</span></div>
       <div class="sec-body"><div id="secFine"></div></div>
     </div>
 
     <div class="sec" data-sec="more">
-      <div class="sec-head"><span class="sec-title">Eigene Presets &amp; Werkzeuge</span><span class="sec-meta"></span><span class="chev c-open">–</span><span class="chev c-closed">+</span></div>
+      <div class="sec-head"><span class="sec-title">Presets &amp; tools</span><span class="sec-meta"></span><span class="chev c-open">–</span><span class="chev c-closed">+</span></div>
       <div class="sec-body">
         <div id="presetList" class="preset-list"></div>
         <div class="row">
-          <input type="text" id="presetName" class="grow" placeholder="Name für dieses Preset">
-          <div class="btn small" id="presetSave">Speichern</div>
+          <input type="text" id="presetName" class="grow" placeholder="Name for this preset">
+          <div class="btn small" id="presetSave">Save</div>
         </div>
         <div class="row">
-          <span class="field-label">Zufall</span>
+          <span class="field-label">Seed</span>
           <input type="text" id="seed" class="num">
-          <div class="btn small" id="dice" title="Neues Zufallsmuster">Würfeln</div>
+          <div class="btn small" id="dice" title="New random pattern">Shuffle</div>
         </div>
-        <div class="switch line" data-for="varySeed" title="Jede Ebene bekommt ein eigenes Muster"><span class="knob"></span><span class="sw-label">Eigenes Muster pro Ebene</span></div>
+        <div class="switch line" data-for="varySeed" title="Every layer gets its own pattern"><span class="knob"></span><span class="sw-label">Own pattern per layer</span></div>
         <input type="checkbox" id="varySeed" class="hidden">
         <div class="row tools-row">
-          <div class="btn small ghost" id="resetAll">Zurücksetzen</div>
-          <div class="btn small ghost" id="verify" title="Vergleicht den Canvas mit den Einstellungen">Prüfen</div>
-          <div class="btn small ghost" id="selfTest" title="Legt ein Testdokument an und prüft alle Funktionen">Selbsttest</div>
-          <div class="btn small ghost" id="refreshPreview" title="Vorschau neu laden">Vorschau neu</div>
+          <div class="btn small ghost" id="resetAll">Reset</div>
+          <div class="btn small ghost" id="verify" title="Compares the canvas with the settings">Verify</div>
+          <div class="btn small ghost" id="selfTest" title="Creates a test document and checks every function">Self-test</div>
+          <div class="btn small ghost" id="refreshPreview" title="Reload the preview">Refresh preview</div>
         </div>
-        <div class="hint">MS Distress schreibt eine Ebenenmaske – die Pixel deiner Ebene bleiben unverändert. Entfernen löscht die Maske wieder.</div>
+        <div class="hint">Morgenstern Distress writes a layer mask – the pixels of your layer stay untouched. Remove deletes the mask again.</div>
       </div>
     </div>
 

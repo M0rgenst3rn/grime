@@ -1,9 +1,9 @@
 "use strict";
-// MS Distress – Kern-Engine.
-// Prozedurale Texturen + Masken-Berechnung. Reines JavaScript ohne Photoshop-Abhängigkeit,
-// damit derselbe Code im Plugin (UXP) und im Test-Renderer (Node) läuft.
+// MS Distress – core engine.
+// Procedural textures + mask computation. Plain JavaScript without Photoshop dependencies,
+// so the same code runs in the plugin (UXP) and in the test renderer (Node).
 
-// ---------------------------------------------------------------- Rauschen
+// ---------------------------------------------------------------- Noise
 
 function hashi(x, y, s) {
   let h = Math.imul(x | 0, 0x27d4eb2d) ^ Math.imul(y | 0, 0x165667b1) ^ Math.imul(s | 0, 0x9e3779b1);
@@ -22,7 +22,7 @@ function smooth(a, b, v) {
 const GX = new Float32Array([1, -1, 0, 0, 0.7071, -0.7071, 0.7071, -0.7071]);
 const GY = new Float32Array([0, 0, 1, -1, 0.7071, 0.7071, -0.7071, -0.7071]);
 
-// Gradient-Rauschen, Ergebnis etwa im Bereich [-1, 1]
+// gradient noise, result roughly in [-1, 1]
 function perlin(x, y, s) {
   const ix = Math.floor(x), iy = Math.floor(y);
   const fx = x - ix, fy = y - iy;
@@ -58,7 +58,7 @@ function ridged(x, y, oct, s) {
   return sum / norm;
 }
 
-// Zellrauschen (Worley). Ergebnisse in F1/F2/CID, um Allokationen pro Pixel zu vermeiden.
+// cell noise (Worley). Results in F1/F2/CID to avoid allocations per pixel.
 let F1 = 0, F2 = 0, CID = 0;
 function cellular(x, y, s) {
   const ix = Math.floor(x), iy = Math.floor(y);
@@ -85,20 +85,20 @@ function angles(s, n) {
   return out;
 }
 
-// ---------------------------------------------------------------- Texturen
-// Jede Textur liefert einen Rohwert: HOHER Wert = wird zuerst weg-"distressed".
-// Die Werte werden später per Histogramm gleichverteilt, damit die Regler bei
-// jeder Textur gleich reagieren (z. B. 40 % Distress ≈ 40 % abgetragene Fläche).
+// ---------------------------------------------------------------- Textures
+// Every texture returns a raw value: HIGH value = is "distressed" away first.
+// The values are later equalised by histogram so the sliders react the same
+// for every texture (e.g. 40 % distress ≈ 40 % worn-away area).
 
 const TEXTURES = [
   { id: "grunge", name: "Grunge", make: (s) => (x, y) => fbm(x, y, 6, s) + 0.35 * ridged(x * 2.3, y * 2.3, 3, s + 7) },
   { id: "worn", name: "Worn Print", make: (s) => (x, y) => 0.55 * fbm(x * 1.5, y * 1.5, 5, s) + 0.45 * perlin(x * 16, y * 16, s + 5) },
   { id: "stamp", name: "Rubber Stamp", make: (s) => (x, y) => 0.7 * fbm(x * 0.6, y * 0.6, 3, s) + 0.35 * fbm(x * 6, y * 6, 3, s + 2) },
-  { id: "rust", name: "Rost", make: (s) => (x, y) => {
+  { id: "rust", name: "Rust", make: (s) => (x, y) => {
     const wx = fbm(x * 0.6, y * 0.6, 3, s + 1), wy = fbm(x * 0.6 + 5.2, y * 0.6 + 1.3, 3, s + 2);
     return fbm(x + wx * 1.8, y + wy * 1.8, 6, s + 3) + 0.25 * perlin(x * 7, y * 7, s + 4);
   } },
-  { id: "speckle", name: "Sprenkel", make: (s) => (x, y) => {
+  { id: "speckle", name: "Speckle", make: (s) => (x, y) => {
     cellular(x * 3, y * 3, s);
     return (0.12 + 0.3 * cidRand(1) - F1) + 0.06 * perlin(x * 12, y * 12, s + 2);
   } },
@@ -114,7 +114,7 @@ const TEXTURES = [
     v = Math.max(v, (Math.pow(cidRand(2), 4) * 0.35 - F1) / 4.3 * 1.1);
     return v + 0.02 * perlin(x * 10, y * 10, s + 3);
   } },
-  { id: "scratches", name: "Kratzer", make: (s) => {
+  { id: "scratches", name: "Scratches", make: (s) => {
     const A = angles(s, 4);
     return (x, y) => {
       let best = 0;
@@ -129,7 +129,7 @@ const TEXTURES = [
       return best + 0.12 * fbm(x * 2, y * 2, 3, s + 60);
     };
   } },
-  { id: "cracks", name: "Risse", make: (s) => (x, y) => {
+  { id: "cracks", name: "Cracks", make: (s) => (x, y) => {
     const w = fbm(x * 0.8, y * 0.8, 3, s + 1) * 0.35;
     cellular(x * 1.3 + w, y * 1.3 - w, s);
     const e1 = F2 - F1;
@@ -137,7 +137,7 @@ const TEXTURES = [
     const e2 = F2 - F1;
     return -Math.min(e1, e2 * 1.6 + 0.05) + 0.05 * fbm(x * 6, y * 6, 2, s + 3);
   } },
-  { id: "peeling", name: "Abblätternd", make: (s) => (x, y) => {
+  { id: "peeling", name: "Peeling", make: (s) => (x, y) => {
     const w = fbm(x * 1.2, y * 1.2, 4, s + 1) * 0.3;
     cellular(x * 0.9 + w, y * 0.9 - w, s);
     return cidRand(4) * 0.9 + 0.15 * fbm(x * 4, y * 4, 3, s + 2) + 0.5 * (1 - smooth(0, 0.12, F2 - F1));
@@ -151,18 +151,18 @@ const TEXTURES = [
     cellular(x * 10, y * 10, s);
     return 0.45 * fbm(x * 0.6, y * 0.6, 4, s + 1) + 0.6 * F1;
   } },
-  { id: "concrete", name: "Beton", make: (s) => (x, y) => {
+  { id: "concrete", name: "Concrete", make: (s) => (x, y) => {
     cellular(x * 5, y * 5, s);
     const pit = clamp01((0.06 + 0.14 * cidRand(3) - F1) / 0.08);
     return 0.55 * fbm(x * 1.2, y * 1.2, 6, s + 1) + 0.8 * pit;
   } },
-  { id: "sandpaper", name: "Sandpapier", make: (s) => (x, y) =>
+  { id: "sandpaper", name: "Sandpaper", make: (s) => (x, y) =>
     0.55 * perlin(x * 22, y * 22, s) + 0.45 * (rnd(Math.floor(x * 48), Math.floor(y * 48), s + 1) * 2 - 1) },
   { id: "drybrush", name: "Dry Brush", make: (s) => (x, y) => fbm(x * 0.25, y * 7, 5, s) + 0.35 * fbm(x * 0.08, y * 0.9, 3, s + 3) },
-  { id: "roller", name: "Farbroller", make: (s) => (x, y) => fbm(x * 0.04, y * 2.5, 4, s) + 0.3 * fbm(x * 1.5, y * 1.5, 3, s + 3) },
-  { id: "chalk", name: "Kreide", make: (s) => (x, y) =>
+  { id: "roller", name: "Paint roller", make: (s) => (x, y) => fbm(x * 0.04, y * 2.5, 4, s) + 0.3 * fbm(x * 1.5, y * 1.5, 3, s + 3) },
+  { id: "chalk", name: "Chalk", make: (s) => (x, y) =>
     0.45 * fbm(x * 0.35, y * 3, 4, s) + 0.35 * perlin(x * 18, y * 18, s + 1) + 0.25 * (rnd(Math.floor(x * 40), Math.floor(y * 40), s + 2) * 2 - 1) },
-  { id: "fibers", name: "Papierfaser", make: (s) => {
+  { id: "fibers", name: "Paper fibre", make: (s) => {
     const A = angles(s + 3, 4);
     return (x, y) => {
       let v = 0;
@@ -173,11 +173,11 @@ const TEXTURES = [
       return v * 0.8 + 0.3 * fbm(x * 1.2, y * 1.2, 3, s + 90);
     };
   } },
-  { id: "crumpled", name: "Zerknittert", make: (s) => (x, y) => {
+  { id: "crumpled", name: "Crumpled", make: (s) => (x, y) => {
     const w = fbm(x * 0.5, y * 0.5, 2, s + 1) * 0.5;
     return ridged(x * 0.9 + w, y * 0.9 - w, 5, s);
   } },
-  { id: "stains", name: "Wasserflecken", make: (s) => (x, y) => {
+  { id: "stains", name: "Water stains", make: (s) => (x, y) => {
     const n = fbm(x * 0.45, y * 0.45, 4, s), f = n * 7;
     const ring = 1 - Math.abs(f - Math.floor(f) - 0.5) * 2;
     return 0.55 * n + 0.35 * Math.pow(ring, 6) + 0.1 * fbm(x * 3, y * 3, 3, s + 3);
@@ -186,66 +186,66 @@ const TEXTURES = [
     const wx = fbm(x * 1.2, y * 1.2, 4, s + 1), wy = fbm(x * 1.2 + 3.1, y * 1.2 + 7.7, 4, s + 2);
     return fbm(x * 2 + wx * 2.5, y * 2 + wy * 2.5, 5, s + 3);
   } },
-  { id: "dust", name: "Staub & Haare", make: (s) => (x, y) => {
+  { id: "dust", name: "Dust & hair", make: (s) => (x, y) => {
     cellular(x * 3.5, y * 3.5, s);
     let v = (Math.pow(cidRand(5), 6) * 0.35 - F1) * 2;
     const hair = (1 - clamp01(Math.abs(fbm(x * 0.35, y * 0.35, 3, s + 4)) / 0.012)) * clamp01(perlin(x * 0.2, y * 0.2, s + 8) * 3 - 0.4);
     v = Math.max(v, hair * 0.4 - 0.1);
     return v + 0.03 * perlin(x * 20, y * 20, s + 2);
   } },
-  { id: "wood", name: "Holzmaserung", make: (s) => (x, y) => {
+  { id: "wood", name: "Wood grain", make: (s) => (x, y) => {
     const n = fbm(x * 0.15, y * 1.2, 4, s);
     return Math.sin((y * 2.5 + n * 3) * Math.PI) * 0.45 + 0.4 * fbm(x * 0.25, y * 7, 4, s + 2);
   } },
-  { id: "canvas", name: "Leinwand", make: (s) => (x, y) =>
+  { id: "canvas", name: "Canvas", make: (s) => (x, y) =>
     0.35 * Math.sin(x * 10 * Math.PI) * Math.sin(y * 10 * Math.PI) + 0.6 * fbm(x * 0.8, y * 0.8, 5, s) + 0.15 * perlin(x * 25, y * 25, s + 1) },
-  // --- Erweiterung (v1.0.2)
-  { id: "sponge", name: "Schwamm", make: (s) => (x, y) => {
+  // --- extension (v1.0.2)
+  { id: "sponge", name: "Sponge", make: (s) => (x, y) => {
     cellular(x * 2.5, y * 2.5, s);
     const a = (0.1 + 0.25 * cidRand(1)) - F1;
     cellular(x * 7, y * 7, s + 3);
     const b = ((0.1 + 0.25 * cidRand(2)) - F1) / 2.8;
     return Math.max(a, b) + 0.04 * fbm(x * 4, y * 4, 2, s + 5);
   } },
-  { id: "rain", name: "Regenschlieren", make: (s) => (x, y) =>
+  { id: "rain", name: "Rain streaks", make: (s) => (x, y) =>
     fbm(x * 6, y * 0.12, 4, s) + 0.25 * fbm(x * 1.5, y * 1.5, 3, s + 2) },
-  { id: "drips", name: "Laufnasen", make: (s) => (x, y) => {
-    // Spalten mit zufälliger Lauflänge: je weiter unten, desto weniger Farbe
+  { id: "drips", name: "Drips", make: (s) => (x, y) => {
+    // columns with random run length: the lower, the less paint
     const col = Math.floor(x * 3 + perlin(y * 0.3, x, s + 4) * 0.3);
     const len = 1.5 + 4 * rnd(col, 1, s);
     const fx = x * 3 - Math.floor(x * 3) - 0.5;
-    // eigene Phase pro Spalte, sonst beginnen alle Laufnasen auf derselben Höhe (sichtbarer Querbalken)
+    // own phase per column, otherwise all drips start at the same height (visible horizontal bar)
     const yc = y + rnd(col, 2, s) * 8;
     const yy = yc - Math.floor(yc / 8) * 8;
     return smooth(len - 1, len + 1, yy) * 0.6 + Math.abs(fx) * 0.5 + 0.2 * fbm(x * 2, y * 2, 3, s + 1);
   } },
-  { id: "brushed", name: "Gebürstet", make: (s) => (x, y) =>
+  { id: "brushed", name: "Brushed", make: (s) => (x, y) =>
     0.6 * fbm(x * 0.05, y * 14, 4, s) + 0.4 * fbm(x * 0.6, y * 0.6, 4, s + 2) },
-  { id: "filmgrain", name: "Filmkorn", make: (s) => (x, y) =>
+  { id: "filmgrain", name: "Film grain", make: (s) => (x, y) =>
     0.4 * perlin(x * 30, y * 30, s) + 0.35 * (rnd(Math.floor(x * 70), Math.floor(y * 70), s + 1) * 2 - 1) + 0.25 * fbm(x * 0.7, y * 0.7, 3, s + 2) },
-  { id: "bubbles", name: "Blasen", make: (s) => (x, y) => {
+  { id: "bubbles", name: "Bubbles", make: (s) => (x, y) => {
     cellular(x * 2.2, y * 2.2, s);
     const r = 0.15 + 0.3 * cidRand(1);
     return Math.max(0.5 - Math.abs(F1 - r) * 8, (r * 0.6 - F1) * 3) + 0.1 * fbm(x * 3, y * 3, 2, s + 1);
   } },
-  { id: "leather", name: "Leder", make: (s) => (x, y) => {
+  { id: "leather", name: "Leather", make: (s) => (x, y) => {
     const w = fbm(x * 1.5, y * 1.5, 3, s + 1) * 0.25;
     cellular(x * 5 + w, y * 5 - w, s);
     return -(F2 - F1) + 0.3 * fbm(x * 1.2, y * 1.2, 4, s + 2);
   } },
-  { id: "bark", name: "Rinde", make: (s) => (x, y) => {
+  { id: "bark", name: "Bark", make: (s) => (x, y) => {
     const w = fbm(x * 0.4, y * 0.4, 3, s + 1) * 0.8;
     return ridged(x * 2.5 + w, y * 0.25, 5, s) + 0.2 * fbm(x * 4, y * 4, 3, s + 2);
   } },
-  { id: "marble", name: "Marmoradern", make: (s) => (x, y) => {
+  { id: "marble", name: "Marble veins", make: (s) => (x, y) => {
     const n = fbm(x * 0.6, y * 0.6, 5, s);
     return -Math.abs(Math.sin((x * 0.7 + y * 0.3 + n * 3.5) * Math.PI)) + 0.15 * fbm(x * 3, y * 3, 3, s + 2);
   } },
-  { id: "topo", name: "Höhenlinien", make: (s) => (x, y) => {
+  { id: "topo", name: "Contour lines", make: (s) => (x, y) => {
     const n = fbm(x * 0.35, y * 0.35, 4, s) * 9;
     return 1 - Math.abs(n - Math.floor(n) - 0.5) * 2 + 0.1 * perlin(x * 8, y * 8, s + 1);
   } },
-  { id: "burnt", name: "Verbrannt", make: (s) => (x, y) => {
+  { id: "burnt", name: "Burnt", make: (s) => (x, y) => {
     const wx = fbm(x * 0.8, y * 0.8, 3, s + 1);
     const base = fbm(x * 0.9 + wx, y * 0.9 - wx, 5, s + 2);
     cellular(x * 6, y * 6, s + 3);
@@ -287,27 +287,27 @@ const DEFAULTS = {
 };
 
 const MIX_MODES = [
-  { id: "blend", name: "Überblenden" },
-  { id: "add", name: "Addieren (beide)" },
-  { id: "mask", name: "Maskieren (nur Überschneidung)" },
+  { id: "blend", name: "Blend" },
+  { id: "add", name: "Add (both)" },
+  { id: "mask", name: "Mask (overlap only)" },
 ];
 
 const FADE_STYLES = [
-  { id: "top", name: "Von oben" },
-  { id: "bottom", name: "Von unten" },
-  { id: "left", name: "Von links" },
-  { id: "right", name: "Von rechts" },
+  { id: "top", name: "From top" },
+  { id: "bottom", name: "From bottom" },
+  { id: "left", name: "From left" },
+  { id: "right", name: "From right" },
   { id: "diagonal", name: "Diagonal" },
-  { id: "center", name: "Radial – Mitte" },
-  { id: "edges", name: "Radial – Rand" },
-  { id: "frame", name: "Rahmen" },
-  { id: "random", name: "Zufällige Wolken" },
+  { id: "center", name: "Radial – centre" },
+  { id: "edges", name: "Radial – edge" },
+  { id: "frame", name: "Frame" },
+  { id: "random", name: "Random clouds" },
 ];
 
-// ---------------------------------------------------------------- Sampler + Verteilung
+// ---------------------------------------------------------------- Sampler + distribution
 
-// Liefert f(xDoc, yDoc) -> Rohwert. Koordinaten sind Dokument-Pixel, damit Vorschau
-// (verkleinert) und Endergebnis (volle Auflösung) exakt dieselbe Textur sehen.
+// Returns f(xDoc, yDoc) -> raw value. Coordinates are document pixels, so the preview
+// (downsampled) and the final result (full resolution) see exactly the same texture.
 function buildSampler(params, customTex) {
   const seed = params.seed | 0;
   const unit = 64 * Math.max(1, params.scale) / 100;
@@ -316,7 +316,7 @@ function buildSampler(params, customTex) {
   const ox = rnd(seed, 11, 3) * 4096, oy = rnd(seed, 13, 5) * 4096;
   let gen;
   if (customTex && !TEX_BY_ID[params.texture]) {
-    // Bild-/Ebenen-Textur, gespiegelt gekachelt (keine sichtbaren Nähte)
+    // image/layer texture, mirrored tiling (no visible seams)
     const { w, h, data } = customTex;
     const k = customTex.k || 1;
     const w2 = w * 2, h2 = h * 2;
@@ -344,7 +344,7 @@ function buildSampler(params, customTex) {
 }
 
 const BINS = 2048;
-// Histogramm-Ausgleich über ein Stichproben-Raster der Ebenen-Bounds.
+// histogram equalisation over a sample grid of the layer bounds.
 function buildCDF(sampler, bounds, n) {
   n = n || 128;
   const bw = Math.max(1, bounds.right - bounds.left), bh = Math.max(1, bounds.bottom - bounds.top);
@@ -374,8 +374,8 @@ function lookupCDF(c, v) {
   return c.cdf[i] + (c.cdf[i + 1] - c.cdf[i]) * (t - i);
 }
 
-// Textur 1 (+ optional Textur 2) -> { sampler, cdf }. Beide Texturen werden einzeln
-// gleichverteilt, kombiniert und das Ergebnis erneut gleichverteilt.
+// texture 1 (+ optional texture 2) -> { sampler, cdf }. Both textures are equalised
+// separately, combined, and the result is equalised again.
 function buildPipeline(p, bounds, tex1, tex2) {
   const s1 = buildSampler(p, tex1);
   const useSecond = p.texture2 && p.texture2Mix > 0 && (TEX_BY_ID[p.texture2] || tex2);
@@ -397,7 +397,7 @@ function buildPipeline(p, bounds, tex1, tex2) {
   return { sampler, cdf: buildCDF(sampler, bounds) };
 }
 
-// Chamfer-Distanz jedes deckenden Pixels zur nächsten Kante der Form (in Sample-Pixeln).
+// chamfer distance of every opaque pixel to the nearest edge of the shape (in sample pixels).
 function distanceTransform(alpha, w, h) {
   const d = new Float32Array(w * h);
   const D = Math.SQRT2;
@@ -429,7 +429,7 @@ function distanceTransform(alpha, w, h) {
   return d;
 }
 
-// g = 1 dort, wo der Effekt am stärksten ist.
+// g = 1 where the effect is strongest.
 function makeFade(p, b, seed) {
   const bw = Math.max(1, b.right - b.left), bh = Math.max(1, b.bottom - b.top);
   const fu = Math.max(bw, bh) / 3;
@@ -453,9 +453,9 @@ function makeFade(p, b, seed) {
   };
 }
 
-// ---------------------------------------------------------------- Masken-Berechnung
-// alpha: Uint8Array (w*h) der Ebene; originX/Y + pxScale bilden Sample-Pixel auf Dokument-Pixel ab.
-// Liefert mask (255 = sichtbar) und optional color (Deckkraft der "Shape Color"-Ebene).
+// ---------------------------------------------------------------- Mask computation
+// alpha: Uint8Array (w*h) of the layer; originX/Y + pxScale map sample pixels to document pixels.
+// Returns mask (255 = visible) and optionally color (opacity of the "Shape Color" layer).
 function computeMask(o) {
   const { alpha, width: w, height: h, originX, originY, bounds } = o;
   const pxScale = o.pxScale || 1;
@@ -503,7 +503,7 @@ function computeMask(o) {
         keep = 1 - smooth(thr - soft, thr + soft, t);
       }
       if (rough > 0 && keep > 0) {
-        // Kantenrauheit = Mischung aus feinem Rauschen und der gewählten Textur
+        // edge roughness = mix of fine noise and the chosen texture
         const tn = lookupCDF(cdf, sampler(xd, yd));
         const n = 0.5 * (0.5 + 0.5 * fbm(xd / roughUnit, yd / roughUnit, 3, seed + 555)) + 0.5 * tn;
         const r = rough * fadeD * (0.15 + 1.7 * clamp01((n - 0.3) * 2.5));
@@ -516,7 +516,7 @@ function computeMask(o) {
   return { mask, color };
 }
 
-// Kleines Vorschaubild einer Textur (Graustufen, 255 = Farbe bleibt).
+// small preview of a texture (greyscale, 255 = paint stays).
 function renderThumb(texId, size, customTex) {
   const p = Object.assign({}, DEFAULTS, { texture: texId, seed: 7 });
   const sampler = buildSampler(p, customTex);

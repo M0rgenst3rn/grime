@@ -1,7 +1,7 @@
 #!/bin/bash
-# Installiert MS Distress über Adobes eigenen Plugin-Installer (UPIA),
-# damit Creative Cloud das Plugin kennt und es nicht wieder aus der Liste streicht.
-# Danach Photoshop neu starten: Zusatzmodule (Plugins) > MS Distress.
+# Installs MS Distress via Adobe's own plugin installer (UPIA),
+# so Creative Cloud knows the plugin and doesn't drop it from the list again.
+# Restart Photoshop afterwards: Plugins > MS Distress.
 set -euo pipefail
 
 HERE="$(cd "$(dirname "$0")" && pwd)"
@@ -11,7 +11,7 @@ rm -f "$HERE/dist/MS-Distress.ccx"
 mkdir -p "$HERE/dist"
 (cd "$HERE/distress" && zip -qr "$HERE/dist/MS-Distress.ccx" . -x '.*')
 
-# nur entfernen, wenn installiert (ein fehlendes Plugin zu entfernen lässt den Installer hängen)
+# only remove if installed (removing a missing plugin hangs the installer)
 if "$UPIA" --list all 2>/dev/null | grep -q "MS Distress "; then "$UPIA" --remove "MS Distress" >/dev/null 2>&1 || true; fi
 "$UPIA" --install "$HERE/dist/MS-Distress.ccx"
-echo "Fertig. Photoshop neu starten > Zusatzmodule (Plugins) > MS Distress"
+echo "Done. Restart Photoshop > Plugins > MS Distress"

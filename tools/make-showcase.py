@@ -1,8 +1,8 @@
-"""Erzeugt die Showcase-Bilder für die README (docs/images/).
+"""Builds the showcase images for the README (docs/images/).
 
-Schrift wird mit Pillow gerendert, der Distress-Effekt kommt aus derselben Engine
-wie im Plugin (distress/core.js via tools/distress-raw.js).
-Aufruf: python3 tools/make-showcase.py
+The lettering is rendered with Pillow; the distress effect comes from the same engine
+as the plugin (distress/core.js via tools/distress-raw.js).
+Usage: python3 tools/make-showcase.py
 """
 import json
 import os
@@ -45,7 +45,7 @@ def shape_alpha(kind, w, h):
 
 
 def distress(alpha_img, params, want_color=False):
-    """Gibt (Maske, Farbe|None) als L-Bilder zurück."""
+    """Returns (mask, colour|None) as L images."""
     global _n
     _n += 1
     w, h = alpha_img.size
@@ -69,7 +69,7 @@ def paper(w, h, tone=PAPER):
 
 def composite(base, alpha_img, mask, rgb, pos=(0, 0), color=None, color_rgb=None):
     eff = Image.new("L", alpha_img.size, 0)
-    eff.paste(alpha_img, (0, 0), mask)  # Alpha × Maske
+    eff.paste(alpha_img, (0, 0), mask)  # alpha × mask
     solid = Image.new("RGB", alpha_img.size, rgb)
     base.paste(solid, pos, eff)
     if color is not None:
@@ -96,12 +96,12 @@ def hero():
         composite(img, a, mask, rgb, (x, y))
         y += a.size[1] + 10
     d = ImageDraw.Draw(img)
-    label(d, (W // 2, H - 48), "Distressed-Texturen für Photoshop – nicht-destruktiv auf Text, Formen & Ebenen",
+    label(d, (W // 2, H - 48), "Distressed textures for Photoshop – non-destructive on text, shapes & layers",
           26, (110, 100, 90), "ma")
     img.save(os.path.join(OUT, "hero.png"), optimize=True)
 
 
-# ------------------------------------------------------------------ Texturen-Galerie
+# ------------------------------------------------------------------ texture gallery
 def gallery():
     textures = json.loads(subprocess.run(
         ["node", "-e", "console.log(JSON.stringify(require(process.argv[1]).TEXTURES))",
@@ -119,10 +119,10 @@ def gallery():
         y = gap + (k // cols) * (tile + gap + cap)
         composite(img, a, mask, INK, (x, y))
         label(d, (x + tile // 2, y + tile + 4), t["name"], 17, (70, 64, 58), "ma")
-    img.save(os.path.join(OUT, "texturen.png"), optimize=True)
+    img.save(os.path.join(OUT, "textures.png"), optimize=True)
 
 
-# ------------------------------------------------------------------ Regler-Demo
+# ------------------------------------------------------------------ slider demo
 def controls():
     word = "WORN"
     base = {"texture": "worn", "scale": 90, "shapeDistress": 40, "innerDistress": 20, "innerEdgeSize": 10, "edgeRoughness": 3, "seed": 21}
@@ -130,15 +130,15 @@ def controls():
         ("Shape Distress 15 %", {"shapeDistress": 15, "innerDistress": 5}),
         ("Shape Distress 45 %", {}),
         ("Shape Distress 75 %", {"shapeDistress": 75, "innerDistress": 50}),
-        ("Shape Meld 0 (hart)", {"shapeMeld": 0}),
-        ("Shape Meld 100 (weich)", {"shapeMeld": 100}),
+        ("Shape Meld 0 (hard)", {"shapeMeld": 0}),
+        ("Shape Meld 100 (soft)", {"shapeMeld": 100}),
         ("Edge Roughness 14 px", {"edgeRoughness": 14}),
         ("Inner Edge Size 0", {"innerEdgeSize": 0, "innerDistress": 40}),
-        ("Fade von links", {"fadeAmount": 90, "fadeStyle": "left", "shapeDistress": 70, "innerDistress": 55}),
-        ("Fade auf Deckkraft", {"fadeAmount": 80, "fadeStyle": "bottom", "fadeTarget": "opacity"}),
+        ("Fade from left", {"fadeAmount": 90, "fadeStyle": "left", "shapeDistress": 70, "innerDistress": 55}),
+        ("Fade on opacity", {"fadeAmount": 80, "fadeStyle": "bottom", "fadeTarget": "opacity"}),
         ("Shape Color", {"colorEnabled": True, "shapeDistress": 55, "innerDistress": 40}),
-        ("Textur invertiert", {"invert": True}),
-        ("Scale 250 %", {"scale": 250}),
+        ("Texture inverted", {"invert": True}),
+        ("Size 250 %", {"scale": 250}),
     ]
     cols = 3
     a = text_alpha(word, IMPACT, 150, pad=24)
@@ -156,21 +156,21 @@ def controls():
         y = gap + (k // cols) * (th + cap + gap)
         composite(img, a, mask, (40, 70, 160), (x, y), color, (232, 180, 40))
         label(d, (x + tw // 2, y + th + 4), name, 19, (70, 64, 58), "ma")
-    img.save(os.path.join(OUT, "regler.png"), optimize=True)
+    img.save(os.path.join(OUT, "sliders.png"), optimize=True)
 
 
-# ------------------------------------------------------------------ Textur 2 kombinieren
+# ------------------------------------------------------------------ combining texture 2
 def combine():
     a = text_alpha("MIX", IMPACT, 170, pad=24)
     tw, th = a.size
     base = {"scale": 100, "shapeDistress": 45, "innerDistress": 35, "innerEdgeSize": 10, "edgeRoughness": 3, "seed": 8}
     demos = [
         ("Grunge", {"texture": "grunge"}),
-        ("Risse", {"texture": "cracks"}),
-        ("Überblenden", {"texture": "grunge", "texture2": "cracks", "texture2Mix": 50, "texture2Mode": "blend"}),
-        ("Addieren", {"texture": "grunge", "texture2": "cracks", "texture2Mix": 100, "texture2Mode": "add"}),
-        ("Kratzer", {"texture": "scratches"}),
-        ("Maskiert mit Stempel", {"texture": "scratches", "texture2": "stamp", "texture2Mix": 100, "texture2Mode": "mask"}),
+        ("Cracks", {"texture": "cracks"}),
+        ("Blend", {"texture": "grunge", "texture2": "cracks", "texture2Mix": 50, "texture2Mode": "blend"}),
+        ("Add", {"texture": "grunge", "texture2": "cracks", "texture2Mix": 100, "texture2Mode": "add"}),
+        ("Scratches", {"texture": "scratches"}),
+        ("Masked with stamp", {"texture": "scratches", "texture2": "stamp", "texture2Mix": 100, "texture2Mode": "mask"}),
     ]
     cols, gap, cap = 6, 20, 34
     W = cols * (tw + gap) + gap
@@ -182,7 +182,7 @@ def combine():
         x = gap + k * (tw + gap)
         composite(img, a, mask, (180, 40, 40), (x, gap))
         label(d, (x + tw // 2, gap + th + 4), name, 19, (70, 64, 58), "ma")
-    img.save(os.path.join(OUT, "kombinieren.png"), optimize=True)
+    img.save(os.path.join(OUT, "combine.png"), optimize=True)
 
 
 if __name__ == "__main__":
@@ -190,4 +190,4 @@ if __name__ == "__main__":
     gallery()
     controls()
     combine()
-    print("Bilder geschrieben:", ", ".join(sorted(os.listdir(OUT))))
+    print("images written:", ", ".join(sorted(os.listdir(OUT))))

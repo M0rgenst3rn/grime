@@ -1,7 +1,7 @@
 "use strict";
 // MS Distress – Photoshop-UXP-Panel.
-// Liest die Pixel der ausgewählten Ebene(n), berechnet mit core.js eine Distress-Maske
-// und schreibt sie als (nicht-destruktive) Ebenenmaske zurück.
+// Reads the pixels of the selected layer(s), computes a distress mask with core.js
+// and writes it back as a (non-destructive) layer mask.
 
 const { app, core, action, imaging } = require("photoshop");
 const { batchPlay } = action;
@@ -13,7 +13,9 @@ const lfs = uxpStorage.localFileSystem;
 const $ = (id) => document.getElementById(id);
 const STORE_KEY = "msdistress.state.v1";
 const PRESET_KEY = "msdistress.presets.v1";
-const COLOR_SUFFIX = " · Distress-Farbe";
+const COLOR_SUFFIX = " · Distress colour";
+// colour layer of a layer – also the German name of earlier versions
+const isColorLayerOf = (l, name) => l.name === name + COLOR_SUFFIX || l.name === name + " · Distress-Farbe";
 
 const BUILTIN_PRESETS = {
   "Subtle Wear": { texture: "grunge", scale: 60, shapeDistress: 18, shapeMeld: 30, edgeRoughness: 1.5, innerDistress: 6, innerEdgeSize: 8 },
@@ -30,17 +32,17 @@ const BUILTIN_PRESETS = {
 };
 
 const SLIDERS = [
-  { key: "scale", label: "Größe", min: 10, max: 500, step: 1, unit: "%", parent: "secTexture" },
-  { key: "rotation", label: "Winkel", min: 0, max: 360, step: 1, unit: "°", parent: "secFine" },
+  { key: "scale", label: "Size", min: 10, max: 500, step: 1, unit: "%", parent: "secTexture" },
+  { key: "rotation", label: "Angle", min: 0, max: 360, step: 1, unit: "°", parent: "secFine" },
   { key: "shapeDistress", label: "Shape Distress", min: 0, max: 100, step: 1, unit: "%", parent: "secShape" },
   { key: "shapeMeld", label: "Shape Meld", min: 0, max: 100, step: 1, unit: "%", parent: "secFine" },
   { key: "edgeRoughness", label: "Edge Roughness", min: 0, max: 60, step: 0.5, unit: "px", parent: "secFine" },
   { key: "innerDistress", label: "Inner Distress", min: 0, max: 100, step: 1, unit: "%", parent: "secShape" },
   { key: "innerEdgeSize", label: "Inner Edge Size", min: 0, max: 200, step: 1, unit: "px", parent: "secFine" },
-  { key: "fadeAmount", label: "Stärke", min: 0, max: 100, step: 1, unit: "%", parent: "secFade" },
-  { key: "texture2Mix", label: "Anteil", min: 0, max: 100, step: 1, unit: "%", parent: "secTexture2" },
-  { key: "texture2Scale", label: "Größe", min: 10, max: 500, step: 1, unit: "%", parent: "secTexture2" },
-  { key: "colorOpacity", label: "Farb-Deckkraft", min: 0, max: 100, step: 1, unit: "%", parent: "secColor" },
+  { key: "fadeAmount", label: "Amount", min: 0, max: 100, step: 1, unit: "%", parent: "secFade" },
+  { key: "texture2Mix", label: "Mix", min: 0, max: 100, step: 1, unit: "%", parent: "secTexture2" },
+  { key: "texture2Scale", label: "Size", min: 10, max: 500, step: 1, unit: "%", parent: "secTexture2" },
+  { key: "colorOpacity", label: "Colour opacity", min: 0, max: 100, step: 1, unit: "%", parent: "secColor" },
 ];
 
 let params = loadParams();
@@ -55,13 +57,13 @@ function texData(id) {
 }
 function texLabel(id) {
   const t = Core.TEXTURES.find((x) => x.id === id) || imageTextures.find((x) => x.id === id);
-  return t ? t.name : id === "custom" ? "Eigene Ebene" : "";
+  return t ? t.name : id === "custom" ? "Own layer" : "";
 }
 let busy = false;
 let cdfCache = { key: "", cdf: null };
 const ctl = {};          // key -> { range, num }
 
-// ---------------------------------------------------------------- Persistenz
+// ---------------------------------------------------------------- Persistence
 
 function loadParams() {
   try { return Object.assign({}, Core.DEFAULTS, JSON.parse(localStorage.getItem(STORE_KEY) || "{}")); }
@@ -71,7 +73,7 @@ function saveParams() { try { localStorage.setItem(STORE_KEY, JSON.stringify(par
 function loadUserPresets() { try { return JSON.parse(localStorage.getItem(PRESET_KEY) || "{}"); } catch (e) { return {}; } }
 function saveUserPresets(p) { try { localStorage.setItem(PRESET_KEY, JSON.stringify(p)); } catch (e) { /* egal */ } }
 
-// ---------------------------------------------------------------- Helfer
+// ---------------------------------------------------------------- Helpers
 
 function setStatus(msg, isErr) {
   const el = $("status");
@@ -91,8 +93,8 @@ function allLayers(list, out) {
   for (const l of list) { out.push(l); if (l.layers) allLayers(l.layers, out); }
   return out;
 }
-// Pixel-Bounds der Ebene plus Puffer: Konturen von Formebenen (Stroke außen/mittig) liegen
-// teils außerhalb von boundsNoEffects und blieben sonst unmaskiert als Rand stehen.
+// pixel bounds of the layer plus a buffer: strokes of shape layers (outside/centre) partly lie
+// outside boundsNoEffects and would otherwise stay unmasked as a rim.
 function layerBounds(layer, doc) {
   const a = layer.boundsNoEffects || layer.bounds;
   const pad = 12;
@@ -140,8 +142,8 @@ async function setMaskEnabled(id, on) {
   await batchPlay([{ _obj: "set", _target: [{ _ref: "layer", _id: id }], to: { _obj: "layer", userMaskEnabled: on } }], {});
 }
 
-// ---------------------------------------------------------------- Protokoll
-// Jede Aktion landet in PluginData/distress-log.txt (letzte 400 Zeilen), für die Fehleranalyse.
+// ---------------------------------------------------------------- Log
+// every action lands in PluginData/distress-log.txt (last 400 lines), for troubleshooting.
 const logLines = [];
 let logWriteTimer = null;
 function log(msg, data) {
@@ -154,7 +156,7 @@ function log(msg, data) {
       const folder = await lfs.getDataFolder();
       const f = await folder.createFile("distress-log.txt", { overwrite: true });
       await f.write(logLines.join("\n") + "\n");
-    } catch (e) { console.log("Log nicht schreibbar", e); }
+    } catch (e) { console.log("log not writable", e); }
   }, 300);
 }
 function effectiveParams(p) {
@@ -165,17 +167,17 @@ function effectiveParams(p) {
 function diffParams(a, b) {
   return Object.keys(a).filter((k) => JSON.stringify(a[k]) !== JSON.stringify(b[k]));
 }
-// Was zuletzt wirklich auf jede Ebene geschrieben wurde: "docId:layerId" -> Parameter
+// what was last really written to each layer: "docId:layerId" -> params
 const lastApplied = new Map();
 
-// Liest Ebenenpixel OHNE die (Distress-)Ebenenmaske. Muss im Modal-Kontext laufen.
-// keepHistory=false: Masken-Umschalten wird über die Protokoll-Unterbrechung zurückgerollt.
+// Reads layer pixels WITHOUT the (distress) layer mask. Must run in a modal context.
+// keepHistory=false: toggling the mask is rolled back through the history suspension.
 async function readLayerUnmasked(ctx, doc, layer, sourceBounds, targetSize) {
   const opts = { documentID: doc.id, layerID: layer.id, sourceBounds, colorSpace: "RGB", componentSize: 8 };
   if (targetSize) opts.targetSize = targetSize;
   let disabled = false, hid = null;
   if (await hasUserMask(layer.id) && await maskEnabled(layer.id)) {
-    if (ctx) hid = await ctx.hostControl.suspendHistory({ documentID: doc.id, name: "MS Distress lesen" });
+    if (ctx) hid = await ctx.hostControl.suspendHistory({ documentID: doc.id, name: "MS Distress read" });
     await setMaskEnabled(layer.id, false);
     disabled = true;
   }
@@ -206,7 +208,7 @@ function to8bit(data, componentSize) {
   for (let i = 0; i < data.length; i++) out[i] = Math.max(0, Math.min(255, Math.round(data[i] * f)));
   return out;
 }
-// 8-Bit-Puffer an die Bittiefe des Dokuments anpassen
+// adapt an 8-bit buffer to the document's bit depth
 function fromBuf8(buf, doc) {
   const depth = String(doc.bitsPerChannel || "");
   if (depth.indexOf("16") >= 0) {
@@ -222,7 +224,7 @@ function fromBuf8(buf, doc) {
   return buf;
 }
 
-// ---------------------------------------------------------------- Bedienelemente (Morgenstern-Design, ms-ui.js)
+// ---------------------------------------------------------------- Controls (Morgenstern design, ms-ui.js)
 
 function buildSliders() {
   for (const s of SLIDERS) {
@@ -234,8 +236,8 @@ function buildSliders() {
   }
 }
 
-// Texturen: zuerst eine kurze Auswahl, „Alle Texturen“ zeigt den Rest.
-// „Haupt“ setzt die erste, „Zweite“ die zweite Textur.
+// textures: a short selection first, "All textures" shows the rest.
+// "Main" sets the first, "Second" the second texture.
 const TEX_SHORT = 12;
 let texSlot = "1";
 let texShowAll = false;
@@ -248,15 +250,15 @@ function buildTextureGrid() {
   let list = texShowAll ? all : all.slice(0, TEX_SHORT);
   if (!texShowAll && cur && !list.some((t) => t.id === cur)) { const c = all.find((t) => t.id === cur); if (c) list = list.concat([c]); }
   list = list.concat(imageTextures.map((t) => ({ id: t.id, name: t.name })));
-  if (texSlot === "1") list.push({ id: "custom", name: "Eigene Ebene" });
-  list.push({ id: "__add", name: "Bild laden" });
+  if (texSlot === "1") list.push({ id: "custom", name: "Own layer" });
+  list.push({ id: "__add", name: "Load image" });
   for (const t of list) {
     const tile = document.createElement("div");
     tile.className = "tile";
     tile.dataset.id = t.id;
     tile.title = t.name;
     tile.innerHTML = t.id === "__add"
-      ? `<div class="ph add">+</div><div class="lbl">Bild laden…</div>`
+      ? `<div class="ph add">+</div><div class="lbl">Load image…</div>`
       : (thumbCache[t.id] ? `<img src="${thumbCache[t.id]}">` : `<div class="ph"></div>`) + `<div class="lbl">${UI.esc(t.name)}</div>`;
     tile.addEventListener("click", () => {
       if (t.id === "__add") return importImageTextures();
@@ -267,7 +269,7 @@ function buildTextureGrid() {
     });
     grid.appendChild(tile);
   }
-  $("texMore").textContent = texShowAll ? "Weniger zeigen" : `Alle ${all.length} Texturen`;
+  $("texMore").textContent = texShowAll ? "Show fewer" : `All ${all.length} textures`;
   syncUI();
   renderThumbs();
 }
@@ -293,7 +295,7 @@ async function renderThumbs() {
         img.src = thumbCache[t.id];
         tile.replaceChild(img, tile.firstChild);
       }
-    } catch (e) { console.log("Thumb-Fehler", t.id, e); return; }
+    } catch (e) { console.log("thumb error", t.id, e); return; }
   }
 }
 
@@ -309,22 +311,22 @@ async function encodeRGB(rgb, w, h) {
   }
 }
 
-const FADE_TARGETS = [{ id: "distress", name: "Distress" }, { id: "opacity", name: "Deckkraft" }, { id: "both", name: "Beides" }];
+const FADE_TARGETS = [{ id: "distress", name: "Distress" }, { id: "opacity", name: "Opacity" }, { id: "both", name: "Both" }];
 const pick = (key) => (v) => { params[key] = v; syncUI(); changed(); };
 function buildSelects() {
   UI.seg($("fadeStyleSeg"), Core.FADE_STYLES, pick("fadeStyle"));
   UI.seg($("fadeTargetSeg"), FADE_TARGETS, pick("fadeTarget"));
   UI.seg($("texture2ModeSeg"), Core.MIX_MODES.map((m) => ({ id: m.id, name: m.name.replace(/ \(.*\)$/, ""), tip: m.name })), pick("texture2Mode"));
-  UI.seg($("slotSeg"), [{ id: "1", name: "Haupt" }, { id: "2", name: "Zweite" }], (v) => { texSlot = v; buildTextureGrid(); });
+  UI.seg($("slotSeg"), [{ id: "1", name: "Main" }, { id: "2", name: "Second" }], (v) => { texSlot = v; buildTextureGrid(); });
   UI.seg($("lookList"), Object.keys(BUILTIN_PRESETS).map((n) => ({ id: n, name: n })), (n) => {
     params = Object.assign({}, Core.DEFAULTS, { seed: params.seed, varySeed: params.varySeed }, BUILTIN_PRESETS[n]);
     texSlot = "1"; buildTextureGrid(); changed();
-    setStatus(`Look „${n}“ – alle Regler bleiben frei einstellbar.`);
+    setStatus(`Look "${n}" – every slider stays adjustable.`);
   });
   rebuildPresetSelect();
 }
 function buildTexture2Select() { buildTextureGrid(); }
-// eingebaute Looks: aktiv, solange alle Werte dazu passen
+// built-in looks: active as long as every value matches
 function activeLook() {
   for (const n of Object.keys(BUILTIN_PRESETS)) {
     const ref = Object.assign({}, Core.DEFAULTS, BUILTIN_PRESETS[n]);
@@ -333,18 +335,18 @@ function activeLook() {
   return "";
 }
 
-// eigene Presets als Liste: Klick lädt, × löscht
+// own presets as a list: click loads, × deletes
 function rebuildPresetSelect() {
   UI.presetList($("presetList"), Object.keys(loadUserPresets()),
-    (n) => { params = Object.assign({}, Core.DEFAULTS, { seed: params.seed, varySeed: params.varySeed }, loadUserPresets()[n]); buildTextureGrid(); changed(); setStatus(`Preset „${n}“ geladen.`); },
-    (n) => { const u = loadUserPresets(); delete u[n]; saveUserPresets(u); rebuildPresetSelect(); setStatus(`Preset „${n}“ gelöscht.`); });
+    (n) => { params = Object.assign({}, Core.DEFAULTS, { seed: params.seed, varySeed: params.varySeed }, loadUserPresets()[n]); buildTextureGrid(); changed(); setStatus(`Preset "${n}" loaded.`); },
+    (n) => { const u = loadUserPresets(); delete u[n]; saveUserPresets(u); rebuildPresetSelect(); setStatus(`Preset "${n}" deleted.`); });
 }
 
-// Eigene Ebene als Textur: Liste der Ebenen statt Ausklappliste
+// own layer as texture: a list of layers instead of a dropdown
 function refreshCustomLayers() {
   const doc = app.activeDocument;
   const box = $("customLayer");
-  if (!doc) { box.innerHTML = `<div class="empty">Kein Dokument geöffnet.</div>`; return; }
+  if (!doc) { box.innerHTML = `<div class="empty">No document open.</div>`; return; }
   const layers = allLayers(doc.layers).filter((l) => l.kind !== "group");
   const cur = customTex ? customTex.layerId : null;
   box.innerHTML = layers.map((l) => `<div class="layer-item${l.id === cur ? " active" : ""}" data-id="${l.id}">${UI.esc(l.name)}</div>`).join("");
@@ -398,7 +400,7 @@ function bindControls() {
   UI.bindSwitch("liveCanvas", (on) => {
     liveLast = null;
     if (on) applyDistress(true);
-    else setStatus("Live aus – der aktuelle Stand bleibt auf der Ebene.");
+    else setStatus("Live off – the current state stays on the layer.");
   });
   $("texMore").addEventListener("click", () => { texShowAll = !texShowAll; buildTextureGrid(); });
   $("clearTex2").addEventListener("click", () => { params.texture2 = ""; syncUI(); changed(); });
@@ -414,7 +416,7 @@ function bindControls() {
       params.color = "#" + app.foregroundColor.rgb.hexValue.toLowerCase();
       params.colorEnabled = true;
       syncUI(); changed();
-    } catch (e) { setStatus("Vordergrundfarbe nicht lesbar: " + e.message, true); }
+    } catch (e) { setStatus("Foreground colour not readable: " + e.message, true); }
   });
   $("seed").addEventListener("change", (e) => {
     const v = parseInt(e.target.value, 10);
@@ -425,13 +427,13 @@ function bindControls() {
   $("refreshPreview").addEventListener("click", () => refreshPreviewSource());
   $("presetSave").addEventListener("click", () => {
     const name = String($("presetName").value || "").trim();
-    if (!name) return setStatus("Gib dem Preset zuerst einen Namen.", true);
+    if (!name) return setStatus("Give the preset a name first.", true);
     const user = loadUserPresets();
     user[name] = Object.assign({}, params);
     saveUserPresets(user);
     rebuildPresetSelect();
     $("presetName").value = "";
-    setStatus(`Preset „${name}“ gespeichert.`);
+    setStatus(`Preset "${name}" saved.`);
   });
   $("resetAll").addEventListener("click", () => { params = Object.assign({}, Core.DEFAULTS); syncUI(); changed(); });
   $("apply").addEventListener("click", () => applyDistress(false));
@@ -448,7 +450,7 @@ function changed() {
   else showSyncHint();
 }
 
-// Hinweis, wenn die aktuellen Einstellungen noch nicht auf dem Canvas sind
+// hint when the current settings are not on the canvas yet
 function showSyncHint() {
   try {
     const doc = app.activeDocument;
@@ -458,27 +460,27 @@ function showSyncHint() {
     const applied = lastApplied.get(doc.id + ":" + layer.id);
     if (!applied) return;
     const diff = diffParams(effectiveParams(paramsFor(0)), applied);
-    if (diff.length) setStatus(`● Noch nicht auf dem Canvas: ${diff.join(", ")} – „Anwenden“ klicken oder Live einschalten.`);
-    else setStatus("Canvas entspricht den Einstellungen.");
+    if (diff.length) setStatus(`● Not on the canvas yet: ${diff.join(", ")} – click "Apply" or turn on Live.`);
+    else setStatus("Canvas matches the settings.");
   } catch (e) { /* egal */ }
 }
 
-// ---------------------------------------------------------------- Selbsttest
-// Liest die echte Maske aus Photoshop zurück und vergleicht sie mit dem, was die aktuellen
-// Einstellungen ergeben müssten. So lassen sich Abweichungen ohne Durchprobieren finden.
-// Prüft eine Ebene: liest die echte Maske aus Photoshop und vergleicht sie mit dem Sollwert
-// für die Parameter p. Muss im Modal-Kontext laufen.
+// ---------------------------------------------------------------- Self-test
+// Reads the real mask back from Photoshop and compares it with what the current settings
+// should produce. That way deviations show up without trial and error.
+// Verifies one layer: reads the real mask from Photoshop and compares it with the expected
+// result for the params p. Must run in a modal context.
 async function verifyLayer(ctx, doc, layer, p) {
-  const r = { ebene: layer.name };
+  const r = { layer: layer.name };
   const b = layerBounds(layer, doc);
   const bw = b.right - b.left, bh = b.bottom - b.top;
-  if (bw <= 0 || bh <= 0) { r.fehler = "leer"; return r; }
-  const f = Math.min(1, 1200 / Math.max(bw, bh)); // möglichst 1:1, sonst verfälscht Verkleinern feine Texturen
+  if (bw <= 0 || bh <= 0) { r.errors = "leer"; return r; }
+  const f = Math.min(1, 1200 / Math.max(bw, bh)); // 1:1 if possible, downsampling would distort fine textures
   const ts = f < 1 ? { width: Math.max(1, Math.round(bw * f)), height: Math.max(1, Math.round(bh * f)) } : null;
-  r.hatMaske = await hasUserMask(layer.id);
+  r.hasMask = await hasUserMask(layer.id);
   const colorName = layer.name + COLOR_SUFFIX;
-  r.farbebenen = allLayers(doc.layers).filter((l) => l.name === colorName).length;
-  r.farbeErwartet = !!p.colorEnabled;
+  r.colorLayers = allLayers(doc.layers).filter((l) => isColorLayerOf(l, layer.name)).length;
+  r.colorExpected = !!p.colorEnabled;
   const px = await readLayerUnmasked(ctx, doc, layer, b, ts);
   const pd = px.imageData;
   const raw = to8bit(await pd.getData({ chunky: true }), pd.componentSize || 8);
@@ -486,7 +488,7 @@ async function verifyLayer(ctx, doc, layer, p) {
   const sb = px.sourceBounds || b;
   const w = pd.width, h = pd.height;
   pd.dispose();
-  if (!r.hatMaske) { r.fehler = "keine Maske auf der Ebene"; return r; }
+  if (!r.hasMask) { r.errors = "no mask on the layer"; return r; }
   const { sampler, cdf } = Core.buildPipeline(p, sb, texData(p.texture), texData(p.texture2));
   const exp = Core.computeMask({ alpha, width: w, height: h, originX: sb.left, originY: sb.top,
     pxScale: (sb.right - sb.left) / w, bounds: sb, params: p, sampler, cdf });
@@ -506,18 +508,18 @@ async function verifyLayer(ctx, doc, layer, p) {
     if (e < 128) removedExp++;
     if (a < 128) removedAct++;
   }
-  r.abweichungProzent = n ? Math.round(bigDiff / n * 1000) / 10 : 0;
+  r.diffPercent = n ? Math.round(bigDiff / n * 1000) / 10 : 0;
   r.mittlereDifferenz = n ? Math.round(diff / n) : 0;
   r.abtragSoll = n ? Math.round(removedExp / n * 100) : 0;
   r.abtragIst = n ? Math.round(removedAct / n * 100) : 0;
-  r.ok = !r.fehler && r.abweichungProzent <= 2 && (r.farbebenen > 0) === r.farbeErwartet && r.farbebenen <= 1;
+  r.ok = !r.errors && r.diffPercent <= 2 && (r.colorLayers > 0) === r.colorExpected && r.colorLayers <= 1;
   return r;
 }
 
 async function verifyCanvas() {
   if (busy) return;
   const doc = app.activeDocument;
-  if (!doc || !doc.activeLayers.length) return setStatus("Keine Ebene ausgewählt.", true);
+  if (!doc || !doc.activeLayers.length) return setStatus("No layer selected.", true);
   const layers = doc.activeLayers.slice();
   const report = [];
   busy = true;
@@ -529,20 +531,20 @@ async function verifyCanvas() {
         r.geaenderteEinstellungen = applied ? diffParams(effectiveParams(paramsFor(i)), applied) : "unbekannt";
         report.push(r);
       }
-    }, { commandName: "MS Distress prüfen" });
+    }, { commandName: "MS Distress verify" });
   } catch (e) {
-    report.push({ fehler: e.message || String(e) });
+    report.push({ errors: e.message || String(e) });
   }
   busy = false;
   ignoreEventsUntil = Date.now() + 600;
-  log("PRÜFEN", report);
+  log("VERIFY", report);
   const bad = report.filter((r) => !r.ok);
-  if (!bad.length) setStatus("✓ Canvas entspricht den aktuellen Einstellungen.");
-  else setStatus("✗ Abweichung: " + bad.map((r) => `${r.ebene || ""} ${r.fehler || ""} ${r.abweichungProzent !== undefined ? r.abweichungProzent + "% Pixel anders" : ""}${r.farbebenen !== undefined && (r.farbebenen > 0) !== r.farbeErwartet ? ", Farbebene " + (r.farbebenen ? "zu viel" : "fehlt") : ""}`).join(" | ") + " (Details im Log)", true);
+  if (!bad.length) setStatus("✓ The canvas matches the current settings.");
+  else setStatus("✗ Deviation: " + bad.map((r) => `${r.layer || ""} ${r.errors || ""} ${r.diffPercent !== undefined ? r.diffPercent + "% of pixels differ" : ""}${r.colorLayers !== undefined && (r.colorLayers > 0) !== r.colorExpected ? ", colour layer " + (r.colorLayers ? "too many" : "missing") : ""}`).join(" | ") + " (details in the log)", true);
 }
 
-// ---------------------------------------------------------------- Automatischer Selbsttest
-// Legt ein Testdokument an und prüft alle Funktionen gegen die echte Photoshop-Maske.
+// ---------------------------------------------------------------- Automatic self-test
+// Creates a test document and checks every function against the real Photoshop mask.
 
 function testShapePixels(w, h) {
   const G = {
@@ -573,12 +575,12 @@ async function runSelfTest() {
   const results = [];
   const t0 = Date.now();
   let doc = null;
-  log("SELBSTTEST START");
-  setStatus("Selbsttest läuft… (ca. 1–2 Minuten, bitte nichts anklicken)");
+  log("SELFTEST START");
+  setStatus("Self-test running… (about 1–2 minutes, please don't click)");
   try {
-    // Testdokument + Testebenen
+    // test document + test layers
     await core.executeAsModal(async () => {
-      doc = await app.documents.add({ width: 700, height: 420, resolution: 72, mode: "RGBColorMode", fill: "white", name: "MS Distress Selbsttest" });
+      doc = await app.documents.add({ width: 700, height: 420, resolution: 72, mode: "RGBColorMode", fill: "white", name: "MS Distress self-test" });
       await batchPlay([{ _obj: "make", _target: [{ _ref: "layer" }], using: { _obj: "layer", name: "Test Pixel" } }], {});
       const pl = doc.activeLayers[0];
       const W = 700, H = 230;
@@ -594,29 +596,29 @@ async function runSelfTest() {
             textStyleRange: [{ _obj: "textStyleRange", from: 0, to: 4, textStyle: { _obj: "textStyle", size: { _unit: "pointsUnit", _value: 150 }, color: { _obj: "RGBColor", red: 200, grain: 30, blue: 30 } } }],
           },
         }], {});
-      } catch (e) { log("  Textebene nicht erstellbar", String(e.message || e)); }
-    }, { commandName: "MS Distress Selbsttest vorbereiten" });
+      } catch (e) { log("  text layer could not be created", String(e.message || e)); }
+    }, { commandName: "MS Distress prepare self-test" });
 
     const layers = allLayers(doc.layers).filter((l) => !l.isBackgroundLayer);
     const D = Object.assign({}, Core.DEFAULTS, { seed: 1337, varySeed: false });
     const cases = [];
-    for (const t of Core.TEXTURES) cases.push([`Textur ${t.id}`, { texture: t.id }]);
-    for (const m of Core.MIX_MODES) cases.push([`Textur 2 ${m.id}`, { texture: "grunge", texture2: "cracks", texture2Mix: 70, texture2Mode: m.id }]);
+    for (const t of Core.TEXTURES) cases.push([`Texture ${t.id}`, { texture: t.id }]);
+    for (const m of Core.MIX_MODES) cases.push([`Texture 2 ${m.id}`, { texture: "grunge", texture2: "cracks", texture2Mix: 70, texture2Mode: m.id }]);
     for (const f of Core.FADE_STYLES) cases.push([`Fade ${f.id}`, { fadeAmount: 80, fadeStyle: f.id }]);
-    for (const tg of ["distress", "opacity", "both"]) cases.push([`Fade-Ziel ${tg}`, { fadeAmount: 70, fadeTarget: tg }]);
-    cases.push(["Invertiert", { invert: true }]);
+    for (const tg of ["distress", "opacity", "both"]) cases.push([`Fade target ${tg}`, { fadeAmount: 70, fadeTarget: tg }]);
+    cases.push(["Inverted", { invert: true }]);
     cases.push(["Rotation 45", { rotation: 45 }]);
-    cases.push(["Scale 30", { scale: 30 }]);
-    cases.push(["Scale 400", { scale: 400 }]);
-    cases.push(["Meld 0 / Rauheit 0", { shapeMeld: 0, edgeRoughness: 0 }]);
-    cases.push(["Meld 100 / Rauheit 25", { shapeMeld: 100, edgeRoughness: 25 }]);
+    cases.push(["Size 30", { scale: 30 }]);
+    cases.push(["Size 400", { scale: 400 }]);
+    cases.push(["Meld 0 / roughness 0", { shapeMeld: 0, edgeRoughness: 0 }]);
+    cases.push(["Meld 100 / roughness 25", { shapeMeld: 100, edgeRoughness: 25 }]);
     cases.push(["Inner Edge 0", { innerEdgeSize: 0, innerDistress: 50 }]);
     cases.push(["Inner Edge 80", { innerEdgeSize: 80 }]);
     cases.push(["Distress 0", { shapeDistress: 0, innerDistress: 0, edgeRoughness: 0 }]);
     cases.push(["Distress 100", { shapeDistress: 100, innerDistress: 100 }]);
-    cases.push(["Farbe AN", { colorEnabled: true, color: "#ff00ff" }]);
-    cases.push(["Farbe wieder AUS", { colorEnabled: false }]);
-    cases.push(["Textur 2 wieder AUS", { texture2: "" }]);
+    cases.push(["Colour ON", { colorEnabled: true, color: "#ff00ff" }]);
+    cases.push(["Colour OFF again", { colorEnabled: false }]);
+    cases.push(["Texture 2 OFF again", { texture2: "" }]);
 
     const ids = layers.map((l) => l.id);
     for (const [name, over] of cases) {
@@ -625,15 +627,15 @@ async function runSelfTest() {
       await applyDistress(false);
       const r = await verifyAll(doc, layers);
       results.push({ test: name, ok: r.every((x) => x.ok), details: r });
-      setStatus(`Selbsttest: ${results.length}/${cases.length + 4} – ${name}`);
+      setStatus(`Self-test: ${results.length}/${cases.length + 4} – ${name}`);
     }
 
-    // Live-Modus: zwei Updates hintereinander dürfen nur EINEN Protokollschritt ergeben
+    // Live mode: two updates in a row may only create ONE history step
     params = Object.assign({}, D, { texture: "rust" });
     await selectLayersModal(ids);
     liveLast = null;
-    // Nicht die Anzahl zählen (bleibt am Protokoll-Limit konstant), sondern prüfen, dass direkt vor
-    // dem letzten Live-Schritt wieder der Stand von vor dem ersten Live-Update liegt.
+    // Don't count the steps (stays constant at the history limit) but check that right before
+    // the last Live step there is the state from before the first Live update.
     const s0 = historyStateId(doc);
     await applyDistress(true);
     params = Object.assign({}, D, { texture: "speckle", colorEnabled: true });
@@ -644,56 +646,56 @@ async function runSelfTest() {
     const ai = states.findIndex((h) => h.id === historyStateId(doc));
     const before = ai > 0 ? states[ai - 1].id : null;
     const rl = await verifyAll(doc, layers);
-    results.push({ test: "Live: Protokoll zusammengefasst", ok: before === s0 && states[ai].name === "MS Distress Live",
+    results.push({ test: "Live: history combined", ok: before === s0 && states[ai].name === "MS Distress Live",
       details: { vorErstemLive: s0, vorLetztemLive: before, aktuell: ai >= 0 ? states[ai].name : null } });
-    results.push({ test: "Live: Canvas = letzte Einstellung (Farbe aus)", ok: rl.every((x) => x.ok), details: rl });
+    results.push({ test: "Live: canvas = last setting (colour off)", ok: rl.every((x) => x.ok), details: rl });
 
-    // Rückgängig: ein Schritt zurück entfernt das Live-Ergebnis
+    // undo: one step back removes the Live result
     await core.executeAsModal(async () => {
       await batchPlay([{ _obj: "select", _target: [{ _ref: "historyState", _enum: "ordinal", _value: "previous" }] }], {});
-    }, { commandName: "MS Distress Test Undo" });
+    }, { commandName: "MS Distress test undo" });
     liveLast = null;
     params = Object.assign({}, D, { texture: "grunge", texture2: "", colorEnabled: false });
     const ru = await verifyAll(doc, layers);
-    results.push({ test: "Rückgängig stellt vorherigen Stand her", ok: ru.every((x) => x.ok), details: ru });
+    results.push({ test: "Undo restores the previous state", ok: ru.every((x) => x.ok), details: ru });
 
-    // Entfernen
+    // remove
     await selectLayersModal(ids);
     await removeDistress();
     let removedOk = true;
     await core.executeAsModal(async () => {
       for (const l of layers) {
         if (await hasUserMask(l.id)) removedOk = false;
-        if (allLayers(doc.layers).some((x) => x.name === l.name + COLOR_SUFFIX)) removedOk = false;
+        if (allLayers(doc.layers).some((x) => isColorLayerOf(x, l.name))) removedOk = false;
       }
-    }, { commandName: "MS Distress Test" });
-    results.push({ test: "Entfernen löscht Maske und Farbebene", ok: removedOk });
+    }, { commandName: "MS Distress test" });
+    results.push({ test: "Remove deletes mask and colour layer", ok: removedOk });
   } catch (e) {
-    results.push({ test: "Abbruch", ok: false, details: String(e && e.stack || e) });
+    results.push({ test: "Aborted", ok: false, details: String(e && e.stack || e) });
   }
   params = saved;
   $("liveCanvas").checked = wasLive;
   syncUI();
   const failed = results.filter((r) => !r.ok);
-  log("SELBSTTEST ERGEBNIS", { bestanden: results.length - failed.length, gesamt: results.length, sekunden: Math.round((Date.now() - t0) / 1000) });
+  log("SELFTEST RESULT", { passed: results.length - failed.length, total: results.length, seconds: Math.round((Date.now() - t0) / 1000) });
   for (const r of results) log((r.ok ? "  ✓ " : "  ✗ ") + r.test, r.ok ? undefined : r.details);
-  setStatus(`Selbsttest: ${results.length - failed.length}/${results.length} bestanden` +
-    (failed.length ? ` – fehlgeschlagen: ${failed.map((r) => r.test).join(", ")}` : " ✓"), failed.length > 0);
+  setStatus(`Self-test: ${results.length - failed.length}/${results.length} passed` +
+    (failed.length ? ` – failed: ${failed.map((r) => r.test).join(", ")}` : " ✓"), failed.length > 0);
   refreshPreviewSource();
 }
 
 async function selectLayersModal(ids) {
-  await core.executeAsModal(async () => { await selectLayers(ids); }, { commandName: "MS Distress Test" });
+  await core.executeAsModal(async () => { await selectLayers(ids); }, { commandName: "MS Distress test" });
 }
 async function verifyAll(doc, layers) {
   const out = [];
   await core.executeAsModal(async (ctx) => {
     for (let i = 0; i < layers.length; i++) out.push(await verifyLayer(ctx, doc, layers[i], paramsFor(i)));
-  }, { commandName: "MS Distress Test prüfen" });
+  }, { commandName: "MS Distress verify test" });
   return out;
 }
 
-// ---------------------------------------------------------------- Farbwähler
+// ---------------------------------------------------------------- Colour picker
 
 async function pickColor() {
   const c0 = hexToRgb(params.color);
@@ -706,7 +708,7 @@ async function pickColor() {
         context: "MS Distress – Shape Color",
         color: { _obj: "RGBColor", red: c0.r, grain: c0.g, blue: c0.b },
       }], {});
-    }, { commandName: "Farbe wählen" });
+    }, { commandName: "Pick colour" });
     const c = res && res[0] && (res[0].RGBFloatColor || res[0].color);
     if (c && c.red !== undefined) {
       params.color = rgbToHex(c.red, c.grain !== undefined ? c.grain : c.green, c.blue);
@@ -714,22 +716,22 @@ async function pickColor() {
       syncUI(); changed();
     }
   } catch (e) {
-    setStatus("Farbwähler nicht verfügbar – Hex-Wert eintippen.", true);
+    setStatus("Colour picker not available – type a hex value.", true);
   }
 }
 
-// ---------------------------------------------------------------- Vorschau
+// ---------------------------------------------------------------- Preview
 
 async function refreshPreviewSource() {
   if (busy) return;
   const doc = app.activeDocument;
-  if (!doc) { previewSrc = null; $("layerName").textContent = "–"; return renderPreview("Kein Dokument geöffnet."); }
+  if (!doc) { previewSrc = null; $("layerName").textContent = "–"; return renderPreview("No document open."); }
   const layer = doc.activeLayers[0];
-  if (!layer) { previewSrc = null; $("layerName").textContent = "–"; return renderPreview("Keine Ebene ausgewählt."); }
+  if (!layer) { previewSrc = null; $("layerName").textContent = "–"; return renderPreview("No layer selected."); }
   $("layerName").textContent = doc.activeLayers.length > 1 ? `${layer.name} (+${doc.activeLayers.length - 1})` : layer.name;
   const b = layerBounds(layer, doc);
   const bw = b.right - b.left, bh = b.bottom - b.top;
-  if (bw <= 0 || bh <= 0) { previewSrc = null; return renderPreview("Ebene ist leer."); }
+  if (bw <= 0 || bh <= 0) { previewSrc = null; return renderPreview("The layer is empty."); }
   const f = Math.min(1, 300 / bw, 168 / bh);
   const tw = Math.max(1, Math.round(bw * f)), th = Math.max(1, Math.round(bh * f));
   try {
@@ -750,13 +752,13 @@ async function refreshPreviewSource() {
         alpha: extractAlpha(raw, comps, n), sb, pxScale: (sb.right - sb.left) / id.width,
       };
       id.dispose();
-    }, { commandName: "MS Distress Vorschau" });
-    ignoreEventsUntil = Date.now() + 600; // Masken-Umschalten beim Lesen nicht als Änderung werten
+    }, { commandName: "MS Distress preview" });
+    ignoreEventsUntil = Date.now() + 600; // don't treat toggling the mask while reading as a change
     previewSrc = src;
     renderPreview();
   } catch (e) {
     previewSrc = null;
-    renderPreview("Vorschau nicht möglich: " + (e.message || e));
+    renderPreview("Preview not possible: " + (e.message || e));
   }
 }
 
@@ -772,12 +774,12 @@ async function renderPreview(msg) {
   const img = $("preview"), m = $("previewMsg");
   if (msg || !previewSrc) {
     img.className = "hidden"; m.className = "preview-msg";
-    m.textContent = msg || "Ebene auswählen…";
+    m.textContent = msg || "Select a layer…";
     return;
   }
   if (params.texture === "custom" && !customTex) {
     img.className = "hidden"; m.className = "preview-msg";
-    m.textContent = "Wähle unten eine Ebene als Textur-Quelle.";
+    m.textContent = "Pick a layer below as the texture source.";
     return;
   }
   const token = ++previewToken;
@@ -812,11 +814,11 @@ async function renderPreview(msg) {
     img.className = ""; m.className = "hidden";
   } catch (e) {
     img.className = "hidden"; m.className = "preview-msg";
-    m.textContent = "Vorschau benötigt Photoshop 24.2 oder neuer.";
+    m.textContent = "The preview needs Photoshop 24.2 or newer.";
   }
 }
 
-// ---------------------------------------------------------------- Eigene Textur
+// ---------------------------------------------------------------- Own texture
 
 async function loadCustomTexture(layerId) {
   if (!layerId) { customTex = null; return renderPreview(); }
@@ -825,7 +827,7 @@ async function loadCustomTexture(layerId) {
   if (!layer) return;
   const b = layerBounds(layer, doc);
   const bw = b.right - b.left, bh = b.bottom - b.top;
-  if (bw <= 0 || bh <= 0) return setStatus("Textur-Ebene ist leer.", true);
+  if (bw <= 0 || bh <= 0) return setStatus("The texture layer is empty.", true);
   const f = Math.min(1, 1024 / Math.max(bw, bh));
   try {
     await core.executeAsModal(async () => {
@@ -840,21 +842,21 @@ async function loadCustomTexture(layerId) {
       for (let i = 0; i < n; i++) {
         const a = comps >= 4 ? raw[i * comps + 3] / 255 : 1;
         const lum = (0.299 * raw[i * comps] + 0.587 * raw[i * comps + 1] + 0.114 * raw[i * comps + 2]) / 255;
-        data[i] = 1 - (lum * a + (1 - a)); // dunkel = trägt ab, transparent = bleibt
+        data[i] = 1 - (lum * a + (1 - a)); // dark = wears away, transparent = stays
       }
       customTex = { layerId, w: id.width, h: id.height, data, k: (b.right - b.left) / id.width };
       id.dispose();
-    }, { commandName: "MS Distress Textur laden" });
-    setStatus(`Textur aus „${layer.name}“ geladen.`);
+    }, { commandName: "MS Distress load texture" });
+    setStatus(`Texture loaded from "${layer.name}".`);
     renderPreview();
   } catch (e) {
-    setStatus("Textur konnte nicht geladen werden: " + (e.message || e), true);
+    setStatus("Texture could not be loaded: " + (e.message || e), true);
   }
 }
 
-// ---------------------------------------------------------------- Bild-Texturen (Bibliothek)
-// Bilder werden einmal über Photoshop geöffnet, als Graustufen (max. 2048 px) im Datenordner
-// des Plugins gespeichert und stehen danach dauerhaft als Textur-Kacheln zur Verfügung.
+// ---------------------------------------------------------------- Image textures (library)
+// Images are opened once through Photoshop, stored as greyscale (max. 2048 px) in the plugin's
+// data folder, and are then always available as texture tiles.
 
 const TEX_MAX = 2048;
 
@@ -878,9 +880,9 @@ async function loadImageTextures() {
       try {
         const buf = await (await folder.getEntry(t.file)).read({ format: uxpStorage.formats.binary });
         imageTextures.push(Object.assign({}, t, { data: new Uint8Array(buf) }));
-      } catch (e) { console.log("Textur fehlt", t.file); }
+      } catch (e) { console.log("texture missing", t.file); }
     }
-  } catch (e) { console.log("Textur-Bibliothek nicht lesbar", e); }
+  } catch (e) { console.log("texture library not readable", e); }
 }
 
 async function importImageTextures() {
@@ -888,11 +890,11 @@ async function importImageTextures() {
   let files;
   try {
     files = await lfs.getFileForOpening({ allowMultiple: true, types: ["png", "jpg", "jpeg", "tif", "tiff", "psd", "webp", "bmp", "gif"] });
-  } catch (e) { return setStatus("Dateiauswahl nicht möglich: " + (e.message || e), true); }
+  } catch (e) { return setStatus("File picker not available: " + (e.message || e), true); }
   const list = !files ? [] : Array.isArray(files) ? files : [files];
   if (!list.length) return;
   busy = true;
-  setStatus(`Importiere ${list.length} Bild(er)…`);
+  setStatus(`Importing ${list.length} image(s)…`);
   const added = [];
   const prevDoc = app.activeDocument;
   try {
@@ -915,7 +917,7 @@ async function importImageTextures() {
           for (let i = 0; i < n; i++) {
             const a = comps >= 4 ? raw[i * comps + 3] / 255 : 1;
             const lum = (0.299 * raw[i * comps] + 0.587 * raw[i * comps + 1] + 0.114 * raw[i * comps + 2]) * a + 255 * (1 - a);
-            data[i] = 255 - Math.round(lum); // dunkel = trägt ab, transparent = bleibt
+            data[i] = 255 - Math.round(lum); // dark = wears away, transparent = stays
           }
           tex = { w: id.width, h: id.height, data };
           id.dispose();
@@ -923,7 +925,7 @@ async function importImageTextures() {
           await d.closeWithoutSaving();
           if (prevDoc) { try { app.activeDocument = prevDoc; } catch (e) { /* egal */ } }
         }
-      }, { commandName: "MS Distress Textur importieren" });
+      }, { commandName: "MS Distress import texture" });
       if (!tex) continue;
       const id = "img:" + Date.now().toString(36) + Math.floor(Math.random() * 1e5).toString(36);
       const fileName = id.slice(4) + ".bin";
@@ -935,13 +937,13 @@ async function importImageTextures() {
     }
     await saveTextureIndex();
   } catch (e) {
-    setStatus("Import fehlgeschlagen: " + (e.message || e), true);
+    setStatus("Import failed: " + (e.message || e), true);
   }
   busy = false;
   if (added.length) {
     params.texture = added[added.length - 1].id;
     buildTextureGrid(); buildTexture2Select(); syncUI(); changed();
-    setStatus(`${added.length} Bild-Textur(en) hinzugefügt.`);
+    setStatus(`${added.length} image texture(s) added.`);
   }
 }
 
@@ -954,16 +956,16 @@ async function deleteImageTexture(id) {
   if (params.texture === id) params.texture = "grunge";
   if (params.texture2 === id) params.texture2 = "";
   buildTextureGrid(); buildTexture2Select(); syncUI(); changed();
-  setStatus(`Textur „${t.name}“ gelöscht.`);
+  setStatus(`Texture "${t.name}" deleted.`);
 }
 
-// ---------------------------------------------------------------- Anwenden / Entfernen
+// ---------------------------------------------------------------- Apply / remove
 
 async function applyToLayer(doc, layer, p) {
-  if (layer.isBackgroundLayer) throw new Error("Hintergrundebene – bitte erst in normale Ebene umwandeln");
-  if (layer.allLocked) throw new Error("Ebene ist gesperrt");
+  if (layer.isBackgroundLayer) throw new Error("Background layer – convert it to a normal layer first");
+  if (layer.allLocked) throw new Error("Layer is locked");
   const b = layerBounds(layer, doc);
-  if (b.right - b.left <= 0 || b.bottom - b.top <= 0) throw new Error("Ebene ist leer");
+  if (b.right - b.left <= 0 || b.bottom - b.top <= 0) throw new Error("Layer is empty");
 
   await selectLayer(layer.id);
   const hadMask = await hasUserMask(layer.id);
@@ -1002,14 +1004,14 @@ async function applyToLayer(doc, layer, p) {
     maskData.dispose();
   }
 
-  // Shape Color: separate Ebene direkt über der Ebene, damit sie frei editierbar bleibt
+  // Shape Color: separate layer right above the layer, so it stays freely editable
   const colorName = layer.name + COLOR_SUFFIX;
-  const oldColor = allLayers(doc.layers).filter((l) => l.name === colorName);
+  const oldColor = allLayers(doc.layers).filter((l) => isColorLayerOf(l, layer.name));
   for (const old of oldColor) await old.delete();
   let removed = 0, opaque = 0;
   for (let i = 0; i < w * h; i++) if (alpha[i] > 0) { opaque++; if (out.mask[i] < 128) removed++; }
-  log("  Ebene", { name: layer.name, id: layer.id, bounds: sb, hadMask, abgetragenProzent: opaque ? Math.round(removed / opaque * 100) : 0,
-    alteFarbebenenGeloescht: oldColor.length, neueFarbebene: !!(p.colorEnabled && out.color) });
+  log("  layer", { name: layer.name, id: layer.id, bounds: sb, hadMask, removedPercent: opaque ? Math.round(removed / opaque * 100) : 0,
+    oldColorLayersDeleted: oldColor.length, newColorLayer: !!(p.colorEnabled && out.color) });
   lastApplied.set(doc.id + ":" + layer.id, effectiveParams(p));
   if (p.colorEnabled && out.color) {
     await selectLayer(layer.id);
@@ -1031,7 +1033,7 @@ async function applyToLayer(doc, layer, p) {
   }
 }
 
-// Live-Modus: letzter eigener Protokollschritt, damit Folge-Updates ihn ersetzen statt neue Schritte anzuhängen
+// Live mode: our last history step, so follow-up updates replace it instead of adding new steps
 let liveLast = null;     // { docId, stateId, ids }
 let livePending = false;
 
@@ -1043,22 +1045,22 @@ async function applyDistress(live) {
   live = live === true;
   if (busy) { if (live) livePending = true; return; }
   const doc = app.activeDocument;
-  if (!doc) return setStatus("Kein Dokument geöffnet.", true);
+  if (!doc) return setStatus("No document open.", true);
   const layers = doc.activeLayers.slice();
-  if (!layers.length) return setStatus("Keine Ebene ausgewählt.", true);
-  if (params.texture === "custom" && !customTex) return setStatus("Bitte zuerst eine Textur-Ebene wählen.", true);
+  if (!layers.length) return setStatus("No layer selected.", true);
+  if (params.texture === "custom" && !customTex) return setStatus("Pick a texture layer first.", true);
   busy = true;
-  setStatus(live ? "Live-Update…" : `Wende an auf ${layers.length} Ebene(n)…`);
+  setStatus(live ? "Live update…" : `Applying to ${layers.length} layer(s)…`);
   const ids = layers.map((l) => l.id);
   const errors = [];
   let ok = 0;
   const t0 = Date.now();
-  // Ist der aktuelle Protokollschritt unser letztes Live-Update auf denselben Ebenen? Dann ersetzen.
+  // is the current history step our last Live update on the same layers? Then replace it.
   const replaceLast = live && liveLast && liveLast.docId === doc.id &&
     liveLast.stateId !== null && liveLast.stateId === historyStateId(doc) &&
     liveLast.ids.join(",") === ids.join(",");
-  log(live ? "LIVE" : "ANWENDEN", { ebenen: layers.map((l) => l.name), ersetztLetztenSchritt: !!replaceLast,
-    protokollVorher: historyStateId(doc), params: effectiveParams(params) });
+  log(live ? "LIVE" : "APPLY", { layers: layers.map((l) => l.name), replacesLastStep: !!replaceLast,
+    historyBefore: historyStateId(doc), params: effectiveParams(params) });
   try {
     await core.executeAsModal(async (ctx) => {
       if (replaceLast) {
@@ -1075,18 +1077,18 @@ async function applyDistress(live) {
       } finally {
         await ctx.hostControl.resumeHistory(hid);
       }
-    }, { commandName: "MS Distress anwenden" });
+    }, { commandName: "MS Distress apply" });
   } catch (e) {
     errors.push(e.message || String(e));
   }
   liveLast = live && ok > 0 ? { docId: doc.id, stateId: historyStateId(doc), ids } : null;
-  log("  Ergebnis", { ok, fehler: errors, protokollNachher: historyStateId(doc), ms: Date.now() - t0 });
-  ignoreEventsUntil = Date.now() + 600; // eigene Änderungen lösen keine Vorschau-Neuladung aus
+  log("  result", { ok, errors: errors, historyAfter: historyStateId(doc), ms: Date.now() - t0 });
+  ignoreEventsUntil = Date.now() + 600; // our own changes don't trigger a preview reload
   busy = false;
   const secs = ((Date.now() - t0) / 1000).toFixed(1);
-  if (errors.length) setStatus(`${ok} ok, ${errors.length} Fehler – ${errors.join(" | ")}`, true);
-  else if (live) setStatus(`Live: ${ok} Ebene(n) aktualisiert (${secs}s).`);
-  else setStatus(`Fertig: ${ok} Ebene(n) in ${secs}s. Rückgängig mit ⌘Z.`);
+  if (errors.length) setStatus(`${ok} ok, ${errors.length} error(s) – ${errors.join(" | ")}`, true);
+  else if (live) setStatus(`Live: ${ok} layer(s) updated (${secs}s).`);
+  else setStatus(`Done: ${ok} layer(s) in ${secs}s. Undo with ⌘Z.`);
   if (livePending && $("liveCanvas").checked) {
     livePending = false;
     applyDistress(true);
@@ -1098,17 +1100,17 @@ const debouncedLive = debounce(() => applyDistress(true), 220);
 async function removeDistress() {
   if (busy) return;
   const doc = app.activeDocument;
-  if (!doc || !doc.activeLayers.length) return setStatus("Keine Ebene ausgewählt.", true);
+  if (!doc || !doc.activeLayers.length) return setStatus("No layer selected.", true);
   const layers = doc.activeLayers.slice();
   const ids = layers.map((l) => l.id);
   busy = true;
   try {
     await core.executeAsModal(async (ctx) => {
-      const hid = await ctx.hostControl.suspendHistory({ documentID: doc.id, name: "MS Distress entfernen" });
+      const hid = await ctx.hostControl.suspendHistory({ documentID: doc.id, name: "MS Distress remove" });
       try {
         for (const layer of layers) {
           const colorName = layer.name + COLOR_SUFFIX;
-          for (const old of allLayers(doc.layers).filter((l) => l.name === colorName)) await old.delete();
+          for (const old of allLayers(doc.layers).filter((l) => isColorLayerOf(l, layer.name))) await old.delete();
           if (await hasUserMask(layer.id)) {
             await selectLayer(layer.id);
             await batchPlay([{ _obj: "delete", _target: [{ _ref: "channel", _enum: "channel", _value: "mask" }] }], {});
@@ -1118,12 +1120,12 @@ async function removeDistress() {
       } finally {
         await ctx.hostControl.resumeHistory(hid);
       }
-    }, { commandName: "MS Distress entfernen" });
+    }, { commandName: "MS Distress remove" });
     for (const id of ids) lastApplied.delete(doc.id + ":" + id);
-    log("ENTFERNEN", { ebenen: layers.map((l) => l.name) });
-    setStatus("Maske(n) und Farb-Ebenen entfernt.");
+    log("REMOVE", { layers: layers.map((l) => l.name) });
+    setStatus("Mask(s) and colour layers removed.");
   } catch (e) {
-    setStatus("Fehler beim Entfernen: " + (e.message || e), true);
+    setStatus("Error while removing: " + (e.message || e), true);
   }
   busy = false;
 }
@@ -1149,12 +1151,12 @@ async function init() {
   syncUI();
   try {
     action.addNotificationListener(["select", "make", "delete", "open", "close", "set", "move", "transform", "placedLayerEditContents"], onPsEvent);
-  } catch (e) { console.log("Event-Listener nicht verfügbar", e); }
-  // Entwickler-Hook: eine Datei „run-selftest“ im Datenordner startet den Selbsttest (und wird gelöscht)
+  } catch (e) { console.log("event listener not available", e); }
+  // developer hook: a file "run-selftest" in the data folder starts the self-test (and is deleted)
   let hookRunning = false;
   setInterval(async () => {
     if (busy || hookRunning) return;
-    try { const f = await (await lfs.getDataFolder()).getEntry("run-selftest"); await f.delete(); hookRunning = true; try { await runSelfTest(); } finally { hookRunning = false; } } catch (e) { /* kein Auftrag */ }
+    try { const f = await (await lfs.getDataFolder()).getEntry("run-selftest"); await f.delete(); hookRunning = true; try { await runSelfTest(); } finally { hookRunning = false; } } catch (e) { /* no request */ }
   }, 3000);
   refreshPreviewSource();
   if (params.texture === "custom") refreshCustomLayers();

@@ -3,158 +3,158 @@
 </p>
 
 <p align="center">
-  <b>Distressed-, Grunge- und Print-Looks für Photoshop – mit einem Klick, nicht-destruktiv, auf Text, Formen und jeder Ebene.</b><br>
-  <sub>Photoshop 2023 (24.2) oder neuer · UXP-Panel · macOS & Windows</sub><br>
-  <sub>Freie Photoshop-Tools von <b>Morgenstern</b> · <b>Morgenstern Distress</b> · <a href="https://github.com/M0rgenst3rn/ms-printer">Morgenstern Printer</a> · <a href="https://github.com/M0rgenst3rn/ms-render">Morgenstern Render</a> · <a href="https://github.com/M0rgenst3rn/ms-phase">Morgenstern Phase</a> · <a href="https://github.com/M0rgenst3rn/ms-glow">Morgenstern Glow</a></sub>
+  <b>Distressed, grunge and print looks for Photoshop – one click, non-destructive, on text, shapes and any layer.</b><br>
+  <sub>Photoshop 2023 (24.2) or newer · UXP panel · macOS & Windows</sub><br>
+  <sub>Free Photoshop tools by <b>Morgenstern</b> · <b>Morgenstern Distress</b> · <a href="https://github.com/M0rgenst3rn/ms-printer">Morgenstern Printer</a> · <a href="https://github.com/M0rgenst3rn/ms-render">Morgenstern Render</a> · <a href="https://github.com/M0rgenst3rn/ms-phase">Morgenstern Phase</a> · <a href="https://github.com/M0rgenst3rn/ms-glow">Morgenstern Glow</a></sub>
 </p>
 
 ---
 
-## Was ist Morgenstern Distress?
+## What is Morgenstern Distress?
 
-Morgenstern Distress ist ein Panel-Plugin für Adobe Photoshop. Es gibt Schriften, Logos, Formen und Bildebenen einen
-abgenutzten Look, etwa Stempel, Siebdruck, Rost, Risse oder Kratzer. Den Look stellst du mit ein paar Reglern ein
-und siehst ihn sofort in der Vorschau oder live auf der Arbeitsfläche.
+Morgenstern Distress is a panel plugin for Adobe Photoshop. It gives lettering, logos, shapes and image layers
+a worn look, like a rubber stamp, screen print, rust, cracks or scratches. You set the look with a few sliders
+and see it right away in the preview or live on the canvas.
 
-Der Effekt wird als **Ebenenmaske** angelegt. Dein Text bleibt also editierbar, und mit ⌘Z oder „Entfernen“
-ist alles wieder rückgängig.
+The effect is created as a **layer mask**. So your text stays editable, and ⌘Z or "Remove" undoes everything.
 
 <table>
 <tr>
-<td width="38%" valign="top"><img src="docs/images/panel.png" alt="Das MS-Distress-Panel in Photoshop"></td>
+<td width="38%" valign="top"><img src="docs/images/panel.png" alt="The Morgenstern Distress panel in Photoshop"></td>
 <td valign="top">
 
 ### Highlights
 
-- **36 eingebaute Texturen**: Grunge, Rubber Stamp, Rost, Risse, Kratzer, Halftone, Kreide, Farbroller, Laufnasen, Leder, Glitch und viele mehr
-- **Eigene Bilder als Texturen**: PNG, JPG, TIF oder PSD laden. Sie werden dauerhaft als Kachel gespeichert
-- **Eine Ebene als Textur**: Jede Ebene im Dokument kann als Textur dienen
-- **Zwei Texturen kombinieren**: Überblenden, Addieren oder Maskieren
-- **Live**: Änderungen an den Reglern landen direkt auf der Arbeitsfläche, als *ein* Protokollschritt
-- **Shape Color**: Abgetragene Stellen werden in einer Farbe deiner Wahl eingefärbt
-- **Fade**: Der Effekt verläuft, zum Beispiel von oben, radial, als Rahmen oder in Wolken, wahlweise auf Distress oder Deckkraft
-- **Mehrere Ebenen gleichzeitig**, auf Wunsch mit eigener Variation pro Ebene
-- **11 Presets** plus eigene Presets speichern
-- **Selbsttest & Prüfen**: Das Plugin kontrolliert, ob der Canvas wirklich den Einstellungen entspricht
+- **36 built-in textures**: grunge, rubber stamp, rust, cracks, scratches, halftone, chalk, paint roller, drips, leather, glitch and many more
+- **Your own images as textures**: load PNG, JPG, TIF or PSD. They are stored permanently as tiles
+- **A layer as texture**: any layer in the document can serve as the texture
+- **Combine two textures**: blend, add or mask
+- **Live**: slider changes land directly on the canvas, as *one* history step
+- **Shape Color**: worn areas are tinted in a colour of your choice
+- **Fade**: the effect fades, e.g. from the top, radially, as a frame or in clouds – on the distress or the opacity
+- **Several layers at once**, optionally with its own variation per layer
+- **11 looks** plus your own presets
+- **A tidy panel**: collapsible sections, its own colour palette, the essentials on top, everything else in Fine-tuning
+- **Self-test & Verify**: the plugin checks whether the canvas really matches the settings
 
 </td>
 </tr>
 </table>
 
-## Texturen
+## Textures
 
-Alle 36 Texturen sind prozedural, also mathematisch erzeugt. Darum werden sie in jeder Größe scharf und haben
-keine sichtbaren Wiederholungen. Über **Zufall** (Würfeln) bekommst du von jeder Textur unendlich viele Varianten.
+All 36 textures are procedural, i.e. generated mathematically. So they stay sharp at any size and have no
+visible repetition. **Seed** (Shuffle) gives endless variants of every texture.
 
-<p align="center"><img src="docs/images/texturen.png" alt="Übersicht aller 36 Texturen"></p>
+<p align="center"><img src="docs/images/textures.png" alt="All 36 textures"></p>
 
-## Die Regler
+## The sliders
 
-<p align="center"><img src="docs/images/regler.png" alt="Wirkung der einzelnen Regler"></p>
+<p align="center"><img src="docs/images/sliders.png" alt="What the sliders do"></p>
 
-| Regler | Was er macht |
+| Slider | What it does |
 |---|---|
-| **Größe / Winkel** | Größe (10–500 %) und Drehung der Textur |
-| **Shape Distress** | Wie stark die Kanten der Form abgetragen werden |
-| **Shape Meld** | Übergang: 0 = harte Stempelkanten, 100 = weich verschmolzen |
-| **Edge Roughness** | Fransige, angeknabberte Außenkante (in Pixeln) |
-| **Inner Distress** | Wie stark das Innere der Form abgetragen wird |
-| **Inner Edge Size** | Breite der Kantenzone, in der *Shape Distress* gilt. Dahinter gilt *Inner Distress* |
-| **Verlauf: Stärke / Richtung** | Lässt den Effekt verlaufen: von oben, unten, links, rechts, diagonal, radial, als Rahmen oder in Wolken |
-| **Fade wirkt auf** | Distress, Deckkraft oder beides |
-| **Shape Color** | Färbt abgetragene Stellen ein, auf einer eigenen, frei editierbaren Ebene |
-| **Textur invertieren** | Vertauscht, welche Bereiche zuerst abgetragen werden |
-| **Zufall** | Neue Variante derselben Einstellung (Würfeln) |
+| **Size / Angle** | Size (10–500 %) and rotation of the texture |
+| **Shape Distress** | How strongly the edges of the shape wear away |
+| **Shape Meld** | Transition: 0 = hard stamp edges, 100 = softly blended |
+| **Edge Roughness** | Frayed, nibbled outer edge (in pixels) |
+| **Inner Distress** | How strongly the inside of the shape wears away |
+| **Inner Edge Size** | Width of the edge zone where *Shape Distress* applies. Beyond it *Inner Distress* applies |
+| **Fade: Amount / Direction** | Lets the effect fade: from the top, bottom, left, right, diagonally, radially, as a frame or in clouds |
+| **Fade affects** | Distress, opacity or both |
+| **Shape Color** | Tints worn areas, on its own freely editable layer |
+| **Invert texture** | Swaps which areas wear away first |
+| **Seed** | A new variant of the same setting (Shuffle) |
 
-Die Texturen werden intern gleichverteilt. **40 % Distress bedeuten deshalb bei jeder Textur ungefähr 40 %
-abgetragene Fläche.** Wechselst du die Textur, bleibt die Stärke gleich.
+The textures are equalised internally. **So 40 % distress means roughly 40 % worn-away area with every
+texture.** When you switch textures, the strength stays the same.
 
-## Texturen kombinieren
+## Combining textures
 
-Mit **Zweite** über den Texturen legst du eine zweite Textur über die erste, mit eigenem Anteil und eigener Größe:
+With **Second** above the textures you lay a second texture over the first, with its own mix and size:
 
-<p align="center"><img src="docs/images/kombinieren.png" alt="Zwei Texturen kombinieren"></p>
+<p align="center"><img src="docs/images/combine.png" alt="Combining two textures"></p>
 
-- **Überblenden**: Beide Muster gehen ineinander über
-- **Addieren**: Abgetragen wird, wo *eine* der beiden Texturen abträgt
-- **Maskieren**: Abgetragen wird nur, wo *beide* abtragen, zum Beispiel Kratzer nur in den Stempel-Flecken
+- **Blend**: both patterns flow into each other
+- **Add**: it wears away where *either* texture wears away
+- **Mask**: it only wears away where *both* do, e.g. scratches only inside the stamp spots
 
 ## Installation
 
-### macOS (empfohlen)
+### macOS (recommended)
 
-1. Repository herunterladen (grüner Button **Code → Download ZIP**) und entpacken
-2. Photoshop beenden
-3. Im Terminal im entpackten Ordner ausführen:
+1. Download the repository (green button **Code → Download ZIP**) and unzip it
+2. Quit Photoshop
+3. Run this in Terminal inside the unzipped folder:
    ```bash
    bash install-mac.sh
    ```
-4. Photoshop starten → **Fenster › Zusatzmodule (Plugins) › MS Distress**
+4. Start Photoshop → **Plugins › MS Distress**
 
-Das Script packt das Plugin und installiert es über Adobes eigenen Plugin-Installer. Creative Cloud kennt es
-danach und entfernt es nicht wieder.
+The script packs the plugin and installs it with Adobe's own plugin installer. Creative Cloud then knows it
+and won't remove it again.
 
 ### Alternative: UXP Developer Tool (macOS & Windows)
 
-1. „UXP Developer Tools“ über die Creative-Cloud-App installieren
-2. In Photoshop unter *Einstellungen › Zusatzmodule* den **Entwicklermodus** aktivieren
-3. Im UXP Developer Tool **Add Plugin** wählen, dann `distress/manifest.json` → **Load**
+1. Install "UXP Developer Tools" from the Creative Cloud app
+2. In Photoshop, turn on **Developer Mode** under *Settings › Plugins*
+3. In the UXP Developer Tool choose **Add Plugin**, then `distress/manifest.json` → **Load**
 
-## So benutzt du es
+## How to use it
 
-1. Eine oder mehrere Ebenen auswählen (Text, Form, Smartobjekt, Pixel)
-2. Eine Textur anklicken und die Regler einstellen. Die Vorschau oben zeigt das Ergebnis sofort
-3. **Anwenden** klicken, oder **Live** einschalten
-4. Fertig. Mit **Entfernen** nimmst du Maske und Farbebene wieder weg
+1. Select one or more layers (text, shape, smart object, pixels)
+2. Click a texture and set the sliders. The preview at the top shows the result right away
+3. Click **Apply**, or turn on **Live**
+4. Done. **Remove** takes the mask and colour layer away again
 
-**Tipps**
-- Konturen (Stroke) von Formebenen werden nicht mit abgetragen. Für einen sauberen Look die Kontur auf „keine“ stellen
-- Gute Quellen für eigene Bild-Texturen sind Grunge-, Papier- und Betonscans in Schwarzweiß. Dunkle Bereiche tragen ab
-- Mit **Prüfen** siehst du, ob der Canvas den aktuellen Einstellungen entspricht
+**Tips**
+- Strokes of shape layers are not worn away. For a clean look set the stroke to "none"
+- Good sources for your own image textures are black-and-white grunge, paper and concrete scans. Dark areas wear away
+- **Verify** shows whether the canvas matches the current settings
 
-## Projektstruktur
+## Project structure
 
 ```
-distress/          Das Plugin (wird so in Photoshop geladen)
-  manifest.json      Plugin-Beschreibung für Photoshop
-  index.html         Panel-Oberfläche
-  main.js            Photoshop-Anbindung (Masken, Ebenen, Live-Modus, Selbsttest)
-  core.js            Textur-Engine, reines JavaScript ohne Photoshop-Abhängigkeit
-install-mac.sh       Packt das Plugin (.ccx) und installiert es
-tools/               Test-Renderer und Generator für die Bilder in dieser README
-docs/images/         Screenshots und Beispielbilder
+distress/            The plugin (loaded into Photoshop as is)
+  manifest.json      Plugin description for Photoshop
+  index.html         Panel UI
+  ms-ui.js/.css      Shared Morgenstern controls and design
+  main.js            Photoshop side (masks, layers, Live mode, self-test)
+  core.js            Texture engine, plain JavaScript without Photoshop dependencies
+install-mac.sh       Packs the plugin (.ccx) and installs it
+tools/               Test renderer, README image generator, browser preview of the panel
+docs/images/         Screenshots and example images
 ```
 
-### Entwicklung
+### Development
 
-Die Engine lässt sich ohne Photoshop testen:
+The engine can be tested without Photoshop:
 
 ```bash
 node tools/render-test.js test.png
 ```
 
-Die Bilder dieser README neu erzeugen (braucht Python mit Pillow):
+Rebuild the images of this README (needs Python with Pillow):
 
 ```bash
 python3 tools/make-showcase.py
 ```
 
-## Fehler gefunden? Ideen?
+## Found a bug? Got an idea?
 
-Melde dich gern! Am einfachsten über **[Issues](https://github.com/M0rgenst3rn/ms-distress/issues)** hier auf GitHub:
-**New issue** klicken und kurz beschreiben, was passiert ist. Hilfreich sind Photoshop-Version, Betriebssystem
-und gern ein Screenshot. Dafür brauchst du nur ein kostenloses GitHub-Konto. Verbesserungsvorschläge und
-Wünsche für neue Funktionen sind genauso willkommen.
+Get in touch! The easiest way is **[Issues](https://github.com/M0rgenst3rn/ms-distress/issues)** here on GitHub:
+click **New issue** and briefly describe what happened. Your Photoshop version, operating system and a
+screenshot help a lot. All you need is a free GitHub account. Suggestions and feature requests are just as
+welcome.
 
-## Lizenz
+## License
 
-[MIT](LICENSE): Du darfst den Code frei ansehen, verändern, weitergeben und auch kommerziell nutzen.
-Einzige Bedingung: Der Lizenzhinweis bleibt in Kopien enthalten.
+[MIT](LICENSE): you may freely read, change, share and also use the code commercially.
+The only condition: the license notice stays in copies.
 
-Adobe und Photoshop sind Marken von Adobe Inc. Dieses Projekt ist unabhängig und steht in keiner
-Verbindung zu Adobe.
+Adobe and Photoshop are trademarks of Adobe Inc. This project is independent and not affiliated with Adobe.
 
 ---
 
 <p align="center"><sub>Morgenstern Distress<br>
-Entwickelt von Linus Leinberger</sub></p>
+Made by Linus Leinberger</sub></p>

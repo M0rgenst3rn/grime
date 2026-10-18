@@ -1,5 +1,5 @@
-// Wendet die MS-Distress-Engine auf eine rohe Alpha-Maske an (für Showcase-Bilder).
-// Aufruf: node tools/distress-raw.js <alpha.raw> <breite> <höhe> '<params-json>' <maske.raw> [<farbe.raw>]
+// Applies the MS Distress engine to a raw alpha mask (for showcase images).
+// Usage: node tools/distress-raw.js <alpha.raw> <width> <height> '<params-json>' <mask.raw> [<colour.raw>]
 const fs = require("fs");
 const path = require("path");
 const Core = require(path.join(__dirname, "..", "distress", "core.js"));
