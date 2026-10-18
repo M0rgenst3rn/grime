@@ -1,18 +1,18 @@
 <p align="center">
-  <img src="docs/images/hero.png" alt="MS Distress" width="100%">
+  <img src="docs/images/hero.png" alt="Morgenstern Distress" width="100%">
 </p>
 
 <p align="center">
   <b>Distressed-, Grunge- und Print-Looks für Photoshop – mit einem Klick, nicht-destruktiv, auf Text, Formen und jeder Ebene.</b><br>
   <sub>Photoshop 2023 (24.2) oder neuer · UXP-Panel · macOS & Windows</sub><br>
-  <sub><b>MS</b> steht für <b>Morgenstern</b>: freie Photoshop-Tools · <b>MS Distress</b> · <a href="https://github.com/M0rgenst3rn/ms-printer">MS Printer</a> · <a href="https://github.com/M0rgenst3rn/ms-render">MS Render</a> · <a href="https://github.com/M0rgenst3rn/ms-phase">MS Phase</a> · <a href="https://github.com/M0rgenst3rn/ms-glow">MS Glow</a></sub>
+  <sub>Freie Photoshop-Tools von <b>Morgenstern</b> · <b>Morgenstern Distress</b> · <a href="https://github.com/M0rgenst3rn/ms-printer">Morgenstern Printer</a> · <a href="https://github.com/M0rgenst3rn/ms-render">Morgenstern Render</a> · <a href="https://github.com/M0rgenst3rn/ms-phase">Morgenstern Phase</a> · <a href="https://github.com/M0rgenst3rn/ms-glow">Morgenstern Glow</a></sub>
 </p>
 
 ---
 
-## Was ist MS Distress?
+## Was ist Morgenstern Distress?
 
-MS Distress ist ein Panel-Plugin für Adobe Photoshop. Es gibt Schriften, Logos, Formen und Bildebenen einen
+Morgenstern Distress ist ein Panel-Plugin für Adobe Photoshop. Es gibt Schriften, Logos, Formen und Bildebenen einen
 abgenutzten Look, etwa Stempel, Siebdruck, Rost, Risse oder Kratzer. Den Look stellst du mit ein paar Reglern ein
 und siehst ihn sofort in der Vorschau oder live auf der Arbeitsfläche.
 
@@ -156,5 +156,5 @@ Verbindung zu Adobe.
 
 ---
 
-<p align="center"><sub>MS Distress · ein Tool von <b>Morgenstern</b><br>
+<p align="center"><sub>Morgenstern Distress<br>
 Entwickelt von Linus Leinberger</sub></p>
