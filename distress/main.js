@@ -31,12 +31,12 @@ const BUILTIN_PRESETS = {
 
 const SLIDERS = [
   { key: "scale", label: "Größe", min: 10, max: 500, step: 1, unit: "%", parent: "secTexture" },
-  { key: "rotation", label: "Winkel", min: 0, max: 360, step: 1, unit: "°", parent: "secTexture" },
+  { key: "rotation", label: "Winkel", min: 0, max: 360, step: 1, unit: "°", parent: "secFine" },
   { key: "shapeDistress", label: "Shape Distress", min: 0, max: 100, step: 1, unit: "%", parent: "secShape" },
-  { key: "shapeMeld", label: "Shape Meld", min: 0, max: 100, step: 1, unit: "%", parent: "secShape" },
-  { key: "edgeRoughness", label: "Edge Roughness", min: 0, max: 60, step: 0.5, unit: "px", parent: "secShape" },
-  { key: "innerDistress", label: "Inner Distress", min: 0, max: 100, step: 1, unit: "%", parent: "secInner" },
-  { key: "innerEdgeSize", label: "Inner Edge Size", min: 0, max: 200, step: 1, unit: "px", parent: "secInner" },
+  { key: "shapeMeld", label: "Shape Meld", min: 0, max: 100, step: 1, unit: "%", parent: "secFine" },
+  { key: "edgeRoughness", label: "Edge Roughness", min: 0, max: 60, step: 0.5, unit: "px", parent: "secFine" },
+  { key: "innerDistress", label: "Inner Distress", min: 0, max: 100, step: 1, unit: "%", parent: "secShape" },
+  { key: "innerEdgeSize", label: "Inner Edge Size", min: 0, max: 200, step: 1, unit: "px", parent: "secFine" },
   { key: "fadeAmount", label: "Stärke", min: 0, max: 100, step: 1, unit: "%", parent: "secFade" },
   { key: "texture2Mix", label: "Anteil", min: 0, max: 100, step: 1, unit: "%", parent: "secTexture2" },
   { key: "texture2Scale", label: "Größe", min: 10, max: 500, step: 1, unit: "%", parent: "secTexture2" },
@@ -387,7 +387,7 @@ function syncUI() {
 }
 
 const SEC_KEY = "msdistress.sections.v1";
-const SEC_DEFAULT = { looks: true, texture: true, wear: true, color: false, fade: false, more: false };
+const SEC_DEFAULT = { looks: true, texture: true, wear: true, color: false, fade: false, fine: false, more: false };
 function bindControls() {
   UI.sections(SEC_KEY, SEC_DEFAULT);
   UI.bindSwitch("invert", (on) => { params.invert = on; changed(); });
