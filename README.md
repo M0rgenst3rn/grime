@@ -4,8 +4,8 @@
 
 <p align="center">
   <b>Distressed, grunge and print looks for Photoshop – one click, non-destructive, on text, shapes and any layer.</b><br>
-  <sub>Photoshop 2023 (24.2) or newer · UXP panel · macOS & Windows</sub><br>
-  <sub>Free Photoshop tools by <b>Morgenstern</b> · <b>Morgenstern Distress</b> · <a href="https://github.com/M0rgenst3rn/ms-printer">Morgenstern Printer</a> · <a href="https://github.com/M0rgenst3rn/ms-render">Morgenstern Render</a> · <a href="https://github.com/M0rgenst3rn/ms-phase">Morgenstern Phase</a> · <a href="https://github.com/M0rgenst3rn/ms-glow">Morgenstern Glow</a> · <a href="https://github.com/M0rgenst3rn/ms-gradients">Morgenstern Gradients</a> · <a href="https://github.com/M0rgenst3rn/ms-grids">Morgenstern Grids</a></sub>
+  <sub>Photoshop 2023 (24.2) or newer · UXP panel</sub><br>
+  <sub>Free tools by <b>Morgenstern</b> · <b>Morgenstern Distress</b> · <a href="https://github.com/M0rgenst3rn/ms-printer">Morgenstern Printer</a> · <a href="https://github.com/M0rgenst3rn/ms-render">Morgenstern Render</a> · <a href="https://github.com/M0rgenst3rn/ms-phase">Morgenstern Phase</a> · <a href="https://github.com/M0rgenst3rn/ms-glow">Morgenstern Glow</a> · <a href="https://github.com/M0rgenst3rn/ms-gradients">Morgenstern Gradients</a> · <a href="https://github.com/M0rgenst3rn/ms-grids">Morgenstern Grids</a></sub>
 </p>
 
 ---
@@ -26,16 +26,16 @@ The effect is created as a **layer mask**. So your text stays editable, and ⌘Z
 ### Highlights
 
 - **36 built-in textures**: grunge, rubber stamp, rust, cracks, scratches, halftone, chalk, paint roller, drips, leather, glitch and many more
-- **Your own images as textures**: load PNG, JPG, TIF or PSD. They are stored permanently as tiles
+- **Your own images as textures**: load PNG, JPG, TIF, PSD, WEBP, BMP or GIF. They are stored permanently as tiles
 - **A layer as texture**: any layer in the document can serve as the texture
 - **Combine two textures**: blend, add or mask
 - **Live**: slider changes land directly on the canvas, as *one* history step
-- **Shape Color**: worn areas are tinted in a colour of your choice
+- **Colour**: worn areas are tinted in a colour of your choice, on their own layer
 - **Ink Bleed**: ink soaks past the edge into the paper – blotchy, with fine tendrils along the fibres, on its own layer
 - **Fade**: the effect fades, e.g. from the top, radially, as a frame or in clouds – on the distress or the opacity
-- **Several layers at once**, optionally with its own variation per layer
+- **Several layers at once**, each with its own pattern (switch **Own pattern per layer**)
 - **12 looks** plus your own presets
-- **A tidy panel**: collapsible sections, its own colour palette, the essentials on top, everything else in Fine-tuning
+- **A tidy panel**: collapsible sections, its own colour palette, the essentials on top, the rest in collapsed sections
 - **Self-test & Verify**: the plugin checks whether the canvas really matches the settings
 
 </td>
@@ -62,8 +62,10 @@ visible repetition. **Seed** (Shuffle) gives endless variants of every texture.
 | **Inner Distress** | How strongly the inside of the shape wears away |
 | **Inner Edge Size** | Width of the edge zone where *Shape Distress* applies. Beyond it *Inner Distress* applies |
 | **Fade: Amount / Direction** | Lets the effect fade: from the top, bottom, left, right, diagonally, radially, as a frame or in clouds |
-| **Fade affects** | Distress, opacity or both |
-| **Shape Color** | Tints worn areas, on its own freely editable layer |
+| **Fade: Affects** | Distress, opacity or both |
+| **Colour** (Colourise, Colour opacity) | Tints worn areas, on its own freely editable layer ("… · Distress colour") |
+| **Second: Mix / Size / Invert** | Strength, size and direction of the second texture |
+| **Ink Bleed: Spread / Fibres / Opacity** | See *Ink Bleed* below |
 | **Invert texture** | Swaps which areas wear away first |
 | **Seed** | A new variant of the same setting (Shuffle) |
 
@@ -73,15 +75,17 @@ texture.** When you switch textures, the strength stays the same.
 ## Ink Bleed
 
 Printed ink soaks into the paper: it creeps past the edge in soft blotches and runs further along the paper
-fibres in fine tendrils; small gaps fill up. Turn on **Ink Bleed** and set:
+fibres in fine tendrils; small gaps fill up. Turn on the **Ink bleed** switch and set:
 
-- **Spread**: how far the ink soaks past the edge (px)
-- **Fibres**: how many fine tendrils run along the fibres
-- **Opacity** and the **ink colour**: the layer's own colour, or one of your choice
+- **Spread**: how far the ink soaks past the edge (0.5–40 px, default 4)
+- **Fibres**: how many fine tendrils run along the fibres (default 40 %)
+- **Opacity**: strength of the bleed (default 90 %)
+- **Ink**: **Layer colour** (the average colour of the layer) or **Own colour** (click the swatch to pick it)
 
 It goes on its own layer right below the layer ("… · Ink bleed"), so your text stays editable and the bleed
 can be changed or hidden on its own. It grows from the ink that is left after the distress, so worn-away
-areas don't bleed. **Remove** deletes it together with the mask.
+areas don't bleed. **Remove** deletes it together with the mask. The look **Ink Bleed** is a quick start
+(not to be confused with the *Ink Bleed* texture, which only wears the shape away).
 
 <p align="center"><img src="docs/images/ink-bleed.png" alt="Ink Bleed"></p>
 
@@ -121,7 +125,7 @@ and won't remove it again.
 1. Select one or more layers (text, shape, smart object, pixels)
 2. Click a texture and set the sliders. The preview at the top shows the result right away
 3. Click **Apply**, or turn on **Live**
-4. Done. **Remove** takes the mask and colour layer away again
+4. Done. **Remove** takes the mask, the colour layer and the ink bleed layer away again
 
 **Tips**
 - Strokes of shape layers are not worn away. For a clean look set the stroke to "none"
@@ -135,10 +139,12 @@ distress/            The plugin (loaded into Photoshop as is)
   manifest.json      Plugin description for Photoshop
   index.html         Panel UI
   ms-ui.js/.css      Shared Morgenstern controls and design
-  main.js            Photoshop side (masks, layers, Live mode, self-test)
-  core.js            Texture engine, plain JavaScript without Photoshop dependencies
+  styles.css         Panel-specific styles
+  icons/             Panel and plugin icons
+  main.js            Photoshop side (masks, colour and ink bleed layers, Live mode, self-test)
+  core.js            Texture and ink bleed engine, plain JavaScript without Photoshop dependencies
 install-mac.sh       Packs the plugin (.ccx) and installs it
-tools/               Test renderer, README image generator, browser preview of the panel
+tools/               Test renderer, README image generator, icon generator, browser preview of the panel
 docs/images/         Screenshots and example images
 ```
 
@@ -150,11 +156,16 @@ The engine can be tested without Photoshop:
 node tools/render-test.js test.png
 ```
 
-Rebuild the images of this README (needs Python with Pillow):
+Rebuild the images of this README (needs Python with Pillow and Node; fonts from macOS, or set
+`MSD_IMPACT` / `MSD_BLACK` / `MSD_LABEL`). `python3 tools/make-showcase.py bleed` renders a single image:
 
 ```bash
 python3 tools/make-showcase.py
 ```
+
+The panel in a browser, with Photoshop mocked: run `python3 -m http.server` in the repository and open
+`http://localhost:8000/tools/ui-preview.html` (add `?demo` for a sample document – that's how
+`docs/images/panel.png` is made).
 
 ## Found a bug? Got an idea?
 

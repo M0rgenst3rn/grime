@@ -32,4 +32,4 @@ icon(23, "icon@1x.png");
 icon(46, "icon@2x.png");
 icon(48, "plugin@1x.png");
 icon(96, "plugin@2x.png");
-console.log("Icons geschrieben:", fs.readdirSync(dir).join(", "));
+console.log("Icons written:", fs.readdirSync(dir).join(", "));

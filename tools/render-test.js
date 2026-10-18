@@ -60,4 +60,4 @@ list.forEach((t, k) => {
 });
 fs.writeFileSync(out, encodePNG(W, H, img, 3));
 const px = shape.w * shape.h;
-console.log(`${list.length} Texturen, ${shape.w}x${shape.h}px je Schriftzug, Ø ${(total / list.length).toFixed(0)} ms (${(total / list.length / px * 1e6).toFixed(0)} ms pro Megapixel)`);
+console.log(`${list.length} textures, ${shape.w}x${shape.h} px per lettering, avg ${(total / list.length).toFixed(0)} ms (${(total / list.length / px * 1e6).toFixed(0)} ms per megapixel)`);
