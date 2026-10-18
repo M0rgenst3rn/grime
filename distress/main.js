@@ -197,7 +197,7 @@ async function readLayerUnmasked(ctx, doc, layer, sourceBounds, targetSize) {
   }
 }
 
-// Rohdaten (chunky) -> Alpha-Kanal
+// raw pixel data (chunky) -> alpha channel
 function extractAlpha(data, comps, n) {
   const alpha = new Uint8Array(n);
   if (comps === 4 || comps === 2) {
@@ -290,7 +290,7 @@ async function renderThumbs() {
         const g = Core.renderThumb(t.id, size, texData(t.id));
         const rgb = new Uint8Array(size * size * 3);
         for (let i = 0; i < g.length; i++) {
-          const v = 40 + g[i] * 0.85;
+          const v = Math.round(40 + g[i] * 0.84);   // 40 … 254 – 255 would wrap round to black in a Uint8Array
           rgb[i * 3] = v; rgb[i * 3 + 1] = v; rgb[i * 3 + 2] = v;
         }
         thumbCache[t.id] = await encodeRGB(rgb, size, size);

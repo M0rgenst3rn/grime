@@ -141,7 +141,7 @@ def controls():
         ("Inner Edge Size 0", {"innerEdgeSize": 0, "innerDistress": 40}),
         ("Fade from left", {"fadeAmount": 90, "fadeStyle": "left", "shapeDistress": 70, "innerDistress": 55}),
         ("Fade on opacity", {"fadeAmount": 80, "fadeStyle": "bottom", "fadeTarget": "opacity"}),
-        ("Shape Color", {"colorEnabled": True, "shapeDistress": 55, "innerDistress": 40}),
+        ("Colour", {"colorEnabled": True, "shapeDistress": 55, "innerDistress": 40}),
         ("Texture inverted", {"invert": True}),
         ("Size 250 %", {"scale": 250}),
     ]
