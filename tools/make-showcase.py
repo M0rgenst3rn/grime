@@ -2,11 +2,12 @@
 
 The lettering is rendered with Pillow; the distress effect comes from the same engine
 as the plugin (distress/core.js via tools/distress-raw.js).
-Usage: python3 tools/make-showcase.py
+Usage: python3 tools/make-showcase.py [hero|gallery|controls|combine|bleed]
 """
 import json
 import os
 import subprocess
+import sys
 import tempfile
 
 from PIL import Image, ImageDraw, ImageFont
@@ -18,6 +19,10 @@ FONTS = "/System/Library/Fonts/Supplemental/"
 IMPACT = FONTS + "Impact.ttf"
 BLACK = FONTS + "Arial Black.ttf"
 LABEL = "/System/Library/Fonts/Helvetica.ttc"
+# outside macOS: fonts from the environment (MSD_IMPACT, MSD_BLACK, MSD_LABEL)
+IMPACT = os.environ.get("MSD_IMPACT", IMPACT)
+BLACK = os.environ.get("MSD_BLACK", BLACK)
+LABEL = os.environ.get("MSD_LABEL", LABEL)
 
 PAPER = (238, 230, 212)
 INK = (28, 26, 30)
@@ -185,9 +190,57 @@ def combine():
     img.save(os.path.join(OUT, "combine.png"), optimize=True)
 
 
+# ------------------------------------------------------------------ ink bleed
+def bleed():
+    global _n
+    a = text_alpha("INK", IMPACT, 170, pad=40)
+    tw, th = a.size
+    base = {"texture": "worn", "scale": 70, "shapeDistress": 0, "innerDistress": 0, "edgeRoughness": 0, "seed": 4,
+            "bleedEnabled": True, "bleedSpread": 4, "bleedFibres": 40, "bleedOpacity": 90}
+    demos = [
+        ("No bleed", {"bleedEnabled": False}, INK),
+        ("Spread 2 px", {"bleedSpread": 2, "bleedFibres": 20}, INK),
+        ("Spread 5 px", {"bleedSpread": 5}, INK),
+        ("Fibres 90 %", {"bleedSpread": 5, "bleedFibres": 90}, INK),
+        ("With distress", {"shapeDistress": 30, "innerDistress": 12, "innerEdgeSize": 6, "edgeRoughness": 1.5}, INK),
+        ("In colour", {"bleedSpread": 4}, (40, 70, 160)),
+    ]
+    cols, gap, cap = 6, 20, 34
+    W = cols * (tw + gap) + gap
+    H = th + cap + gap * 2
+    img = paper(W, H)
+    d = ImageDraw.Draw(img)
+    for k, (name, over, rgb) in enumerate(demos):
+        p = dict(base, **over)
+        _n += 1
+        af, mf, bf = (os.path.join(TMP, f"{c}{_n}.raw") for c in "amb")
+        with open(af, "wb") as f:
+            f.write(a.tobytes())
+        out = subprocess.run(["node", os.path.join(ROOT, "tools", "bleed-raw.js"), af, str(tw), str(th), json.dumps(p), mf, bf],
+                             check=True, capture_output=True, text=True).stdout
+        pad = json.loads(out)["pad"]
+        mask = Image.frombytes("L", (tw, th), open(mf, "rb").read())
+        x = gap + k * (tw + gap)
+        if p["bleedEnabled"]:
+            bl = Image.frombytes("L", (tw + 2 * pad, th + 2 * pad), open(bf, "rb").read())
+            bl = bl.point(lambda v: int(v * p["bleedOpacity"] / 100))
+            # only inside this tile
+            crop = bl.crop((pad, pad, pad + tw, pad + th))
+            img.paste(Image.new("RGB", (tw, th), rgb), (x, gap), crop)
+        composite(img, a, mask, rgb, (x, gap))
+        label(d, (x + tw // 2, gap + th + 4), name, 19, (70, 64, 58), "ma")
+    img.save(os.path.join(OUT, "ink-bleed.png"), optimize=True)
+
+
 if __name__ == "__main__":
+    only = sys.argv[1] if len(sys.argv) > 1 else None   # e.g. "bleed" renders just that image
+    if only:
+        globals()[only]()
+        print("written:", only)
+        sys.exit(0)
     hero()
     gallery()
     controls()
     combine()
+    bleed()
     print("images written:", ", ".join(sorted(os.listdir(OUT))))

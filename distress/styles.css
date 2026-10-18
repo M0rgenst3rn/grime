@@ -11,3 +11,8 @@
 #slot1, #slot2 { margin-top: 4px; }
 
 .hidden, .btn.hidden, .subgroup.hidden, .empty.hidden { display: none; }
+
+/* ink bleed: ink colour row */
+.bleed-ink { align-items: center; margin-top: 4px; }
+.bleed-ink .seg { margin: 0 6px; }
+.swatch.hidden { display: none; }

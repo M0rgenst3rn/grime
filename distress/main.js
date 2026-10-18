@@ -16,6 +16,8 @@ const PRESET_KEY = "msdistress.presets.v1";
 const COLOR_SUFFIX = " · Distress colour";
 // colour layer of a layer – also the German name of earlier versions
 const isColorLayerOf = (l, name) => l.name === name + COLOR_SUFFIX || l.name === name + " · Distress-Farbe";
+const BLEED_SUFFIX = " · Ink bleed";
+const isBleedLayerOf = (l, name) => l.name === name + BLEED_SUFFIX;
 
 const BUILTIN_PRESETS = {
   "Subtle Wear": { texture: "grunge", scale: 60, shapeDistress: 18, shapeMeld: 30, edgeRoughness: 1.5, innerDistress: 6, innerEdgeSize: 8 },
@@ -29,6 +31,7 @@ const BUILTIN_PRESETS = {
   "Faded Poster": { texture: "worn", scale: 90, shapeDistress: 40, shapeMeld: 20, edgeRoughness: 2, innerDistress: 20, innerEdgeSize: 8, fadeAmount: 70, fadeStyle: "bottom", fadeTarget: "both" },
   "Chalkboard": { texture: "chalk", scale: 70, shapeDistress: 45, shapeMeld: 15, edgeRoughness: 3, innerDistress: 35, innerEdgeSize: 5 },
   "Dry Brush": { texture: "drybrush", scale: 110, shapeDistress: 50, shapeMeld: 12, edgeRoughness: 4, innerDistress: 30, innerEdgeSize: 6 },
+  "Ink Bleed": { texture: "worn", scale: 70, shapeDistress: 22, shapeMeld: 10, edgeRoughness: 1.5, innerDistress: 10, innerEdgeSize: 6, bleedEnabled: true, bleedSpread: 3, bleedFibres: 45, bleedOpacity: 85 },
 };
 
 const SLIDERS = [
@@ -43,6 +46,9 @@ const SLIDERS = [
   { key: "texture2Mix", label: "Mix", min: 0, max: 100, step: 1, unit: "%", parent: "secTexture2" },
   { key: "texture2Scale", label: "Size", min: 10, max: 500, step: 1, unit: "%", parent: "secTexture2" },
   { key: "colorOpacity", label: "Colour opacity", min: 0, max: 100, step: 1, unit: "%", parent: "secColor" },
+  { key: "bleedSpread", label: "Spread", min: 0.5, max: 40, step: 0.5, unit: "px", parent: "secBleed", tip: "How far the ink soaks past the edge" },
+  { key: "bleedFibres", label: "Fibres", min: 0, max: 100, step: 1, unit: "%", parent: "secBleed", tip: "Fine tendrils along the paper fibres" },
+  { key: "bleedOpacity", label: "Opacity", min: 0, max: 100, step: 1, unit: "%", parent: "secBleed" },
 ];
 
 let params = loadParams();
@@ -381,6 +387,12 @@ function syncUI() {
   $("swatch").style.backgroundColor = params.color;
   $("colorMeta").textContent = params.colorEnabled ? params.color : "";
   $("secColor").className = params.colorEnabled ? "" : "hidden";
+  $("bleedEnabled").checked = !!params.bleedEnabled;
+  $("bleedOpts").className = params.bleedEnabled ? "" : "hidden";
+  $("bleedMeta").textContent = params.bleedEnabled ? params.bleedSpread + " px" : "";
+  UI.syncSeg($("bleedColorSeg"), params.bleedColorMode);
+  $("bleedSwatch").style.backgroundColor = params.bleedColor;
+  $("bleedSwatch").className = params.bleedColorMode === "custom" ? "swatch" : "swatch hidden";
   $("seed").value = String(params.seed);
   $("varySeed").checked = !!params.varySeed;
   UI.syncSeg($("lookList"), activeLook());
@@ -389,12 +401,19 @@ function syncUI() {
 }
 
 const SEC_KEY = "msdistress.sections.v1";
-const SEC_DEFAULT = { looks: true, texture: true, wear: true, color: false, fade: false, fine: false, more: false };
+const SEC_DEFAULT = { looks: true, texture: true, wear: true, color: false, bleed: false, fade: false, fine: false, more: false };
 function bindControls() {
   UI.sections(SEC_KEY, SEC_DEFAULT);
   UI.bindSwitch("invert", (on) => { params.invert = on; changed(); });
   UI.bindSwitch("texture2Invert", (on) => { params.texture2Invert = on; changed(); });
   UI.bindSwitch("colorEnabled", (on) => { params.colorEnabled = on; syncUI(); changed(); });
+  UI.bindSwitch("bleedEnabled", (on) => { params.bleedEnabled = on; syncUI(); changed(); });
+  document.querySelectorAll("#bleedColorSeg .seg-btn").forEach((b) => b.addEventListener("click", () => { params.bleedColorMode = b.getAttribute("data-v"); syncUI(); changed(); }));
+  $("bleedSwatch").addEventListener("click", () => UI.openColorPop({
+    pop: $("colorPop"), key: "bleedColor", anchor: $("bleedSwatch"),
+    get: () => params.bleedColor,
+    set: (c) => { params.bleedColor = c; params.bleedColorMode = "custom"; syncUI(); changed(); },
+  }));
   UI.bindSwitch("varySeed", (on) => { params.varySeed = on; saveParams(); });
   UI.bindSwitch("previewDark", () => renderPreview());
   UI.bindSwitch("liveCanvas", (on) => {
@@ -627,8 +646,38 @@ async function runSelfTest() {
       await applyDistress(false);
       const r = await verifyAll(doc, layers);
       results.push({ test: name, ok: r.every((x) => x.ok), details: r });
-      setStatus(`Self-test: ${results.length}/${cases.length + 4} – ${name}`);
+      setStatus(`Self-test: ${results.length}/${cases.length + 6} – ${name}`);
     }
+
+    // Ink bleed: its own layer right below each layer, with ink beyond the layer's edge
+    const bleedCheck = async (want) => {
+      const info = [];
+      let ok = true;
+      await core.executeAsModal(async () => {
+        for (const l of layers) {
+          const sib = (l.parent && l.parent.layers) || doc.layers, i = sib.findIndex((x) => x.id === l.id), below = sib[i + 1];
+          const has = allLayers(doc.layers).some((x) => isBleedLayerOf(x, l.name));
+          let outside = 0;
+          if (below && isBleedLayerOf(below, l.name)) {
+            const lb = layerBounds(l, doc), bb = layerBounds(below, doc);
+            outside = Math.max(lb.left - bb.left, bb.right - lb.right, lb.top - bb.top, bb.bottom - lb.bottom);
+          }
+          info.push({ layer: l.name, below: below ? below.name : null, outside });
+          if (want ? !(below && isBleedLayerOf(below, l.name) && outside > 0) : has) ok = false;
+        }
+      }, { commandName: "MS Distress test" });
+      return { ok, info };
+    };
+    params = Object.assign({}, D, { bleedEnabled: true, bleedSpread: 6, bleedFibres: 60 });
+    await selectLayersModal(ids);
+    await applyDistress(false);
+    const b1 = await bleedCheck(true);
+    results.push({ test: "Ink bleed: own layer below, ink beyond the edge", ok: b1.ok, details: b1.info });
+    params = Object.assign({}, D, { bleedEnabled: false });
+    await selectLayersModal(ids);
+    await applyDistress(false);
+    const b2 = await bleedCheck(false);
+    results.push({ test: "Ink bleed off: its layer is gone", ok: b2.ok, details: b2.info });
 
     // Live mode: two updates in a row may only create ONE history step
     params = Object.assign({}, D, { texture: "rust" });
@@ -666,10 +715,10 @@ async function runSelfTest() {
     await core.executeAsModal(async () => {
       for (const l of layers) {
         if (await hasUserMask(l.id)) removedOk = false;
-        if (allLayers(doc.layers).some((x) => isColorLayerOf(x, l.name))) removedOk = false;
+        if (allLayers(doc.layers).some((x) => isColorLayerOf(x, l.name) || isBleedLayerOf(x, l.name))) removedOk = false;
       }
     }, { commandName: "MS Distress test" });
-    results.push({ test: "Remove deletes mask and colour layer", ok: removedOk });
+    results.push({ test: "Remove deletes mask, colour and ink bleed layers", ok: removedOk });
   } catch (e) {
     results.push({ test: "Aborted", ok: false, details: String(e && e.stack || e) });
   }
@@ -769,6 +818,14 @@ function getPipeline(p, bounds) {
   return cdfCache.pipe;
 }
 
+// the ink colour of the bleed: the layer's own colour (average of its opaque pixels) or the chosen one
+function inkColor(p, px, alpha, n, comps) {
+  if (p.bleedColorMode === "custom") { const c = hexToRgb(p.bleedColor); return [c.r, c.g, c.b]; }
+  let r = 0, g = 0, b = 0, sum = 0;
+  for (let i = 0; i < n; i++) { const a = alpha[i]; if (a < 128) continue; r += px[i * comps] * a; g += px[i * comps + 1] * a; b += px[i * comps + 2] * a; sum += a; }
+  return sum ? [r / sum, g / sum, b / sum] : [27, 27, 27];
+}
+
 let previewToken = 0;
 async function renderPreview(msg) {
   const img = $("preview"), m = $("previewMsg");
@@ -793,22 +850,29 @@ async function renderPreview(msg) {
   const dark = $("previewDark").checked;
   const c1 = dark ? 34 : 255, c2 = dark ? 44 : 228;
   const col = hexToRgb(p.color);
-  const rgb = new Uint8Array(s.w * s.h * 3);
-  for (let y = 0; y < s.h; y++) {
-    for (let x = 0; x < s.w; x++) {
-      const i = y * s.w + x;
+  // ink bleed: a margin around the layer, drawn below it
+  const bl = p.bleedEnabled ? Core.computeBleed({ alpha: s.alpha, mask: out.mask, width: s.w, height: s.h, originX: s.sb.left, originY: s.sb.top, pxScale: s.pxScale, params: p }) : null;
+  const pad = bl ? bl.pad : 0, W = s.w + 2 * pad, H = s.h + 2 * pad;
+  const ink = bl ? inkColor(p, s.rgba, s.alpha, s.w * s.h, 4) : null, bo = p.bleedOpacity / 100;
+  const rgb = new Uint8Array(W * H * 3);
+  for (let y = 0; y < H; y++) {
+    for (let x = 0; x < W; x++) {
+      const o = y * W + x, sx = x - pad, sy = y - pad, inside = sx >= 0 && sy >= 0 && sx < s.w && sy < s.h, i = sy * s.w + sx;
       const bg = ((x >> 3) + (y >> 3)) & 1 ? c2 : c1;
-      const a = (s.alpha[i] / 255) * (out.mask[i] / 255);
-      const ca = out.color ? out.color[i] / 255 : 0;
+      const a = inside ? (s.alpha[i] / 255) * (out.mask[i] / 255) : 0;
+      const ca = inside && out.color ? out.color[i] / 255 : 0;
+      const ba = bl ? bl.alpha[o] / 255 * bo : 0;
       for (let ch = 0; ch < 3; ch++) {
-        let v = bg * (1 - a) + s.rgba[i * 4 + ch] * a;
+        let v = bg;
+        if (ba > 0) v = v * (1 - ba) + ink[ch] * ba;
+        if (a > 0) v = v * (1 - a) + s.rgba[i * 4 + ch] * a;
         v = v * (1 - ca) + (ch === 0 ? col.r : ch === 1 ? col.g : col.b) * ca;
-        rgb[i * 3 + ch] = v;
+        rgb[o * 3 + ch] = v;
       }
     }
   }
   try {
-    const src = await encodeRGB(rgb, s.w, s.h);
+    const src = await encodeRGB(rgb, W, H);
     if (token !== previewToken) return;
     img.src = src;
     img.className = ""; m.className = "hidden";
@@ -976,6 +1040,7 @@ async function applyToLayer(doc, layer, p) {
   const w = id.width, h = id.height, comps = id.components;
   const raw = to8bit(await id.getData({ chunky: true }), id.componentSize || 8);
   const alpha = extractAlpha(raw, comps, w * h);
+  const ink = p.bleedEnabled ? inkColor(p, raw, alpha, w * h, comps) : null;
   id.dispose();
   const sb = res.sourceBounds || b;
 
@@ -1004,6 +1069,10 @@ async function applyToLayer(doc, layer, p) {
     maskData.dispose();
   }
 
+  // Ink bleed: separate layer right below the layer (it adds ink outside the shape, which a mask can't)
+  for (const old of allLayers(doc.layers).filter((l) => isBleedLayerOf(l, layer.name))) await old.delete();
+  if (p.bleedEnabled) await putBleedLayer(doc, layer, p, alpha, out.mask, w, h, sb, ink);
+
   // Shape Color: separate layer right above the layer, so it stays freely editable
   const colorName = layer.name + COLOR_SUFFIX;
   const oldColor = allLayers(doc.layers).filter((l) => isColorLayerOf(l, layer.name));
@@ -1031,6 +1100,32 @@ async function applyToLayer(doc, layer, p) {
       cd.dispose();
     }
   }
+}
+
+async function putBleedLayer(doc, layer, p, alpha, mask, w, h, sb, ink) {
+  const bl = Core.computeBleed({ alpha, mask, width: w, height: h, originX: sb.left, originY: sb.top, pxScale: 1, params: p });
+  // only the part on the canvas
+  const dw = Math.round(Number(doc.width)), dh = Math.round(Number(doc.height));
+  const left = sb.left - bl.pad, top = sb.top - bl.pad;
+  const x0 = Math.max(0, -left), y0 = Math.max(0, -top), x1 = Math.min(bl.w, dw - left), y1 = Math.min(bl.h, dh - top);
+  const cw = x1 - x0, ch = y1 - y0;
+  if (cw <= 0 || ch <= 0) return;
+  const op = p.bleedOpacity / 100, buf = new Uint8Array(cw * ch * 4);
+  for (let y = 0; y < ch; y++) for (let x = 0; x < cw; x++) {
+    const o = (y * cw + x) * 4, a = bl.alpha[(y + y0) * bl.w + x + x0];
+    buf[o] = ink[0]; buf[o + 1] = ink[1]; buf[o + 2] = ink[2]; buf[o + 3] = a * op;
+  }
+  await selectLayer(layer.id);
+  await batchPlay([{ _obj: "make", _target: [{ _ref: "layer" }], using: { _obj: "layer", name: layer.name + BLEED_SUFFIX } }], {});
+  const bleedLayer = doc.activeLayers[0];
+  const data = await imaging.createImageDataFromBuffer(fromBuf8(buf, doc), {
+    width: cw, height: ch, components: 4, chunky: true, colorSpace: "RGB", colorProfile: "sRGB IEC61966-2.1",
+  });
+  try { await imaging.putPixels({ documentID: doc.id, layerID: bleedLayer.id, imageData: data, targetBounds: { left: left + x0, top: top + y0 } }); }
+  finally { data.dispose(); }
+  // below the layer
+  await batchPlay([{ _obj: "move", _target: [{ _ref: "layer", _enum: "ordinal", _value: "targetEnum" }], to: { _ref: "layer", _enum: "ordinal", _value: "previous" } }], {});
+  log("  ink bleed", { layer: layer.name, pad: bl.pad, size: [cw, ch] });
 }
 
 // Live mode: our last history step, so follow-up updates replace it instead of adding new steps
@@ -1110,7 +1205,7 @@ async function removeDistress() {
       try {
         for (const layer of layers) {
           const colorName = layer.name + COLOR_SUFFIX;
-          for (const old of allLayers(doc.layers).filter((l) => isColorLayerOf(l, layer.name))) await old.delete();
+          for (const old of allLayers(doc.layers).filter((l) => isColorLayerOf(l, layer.name) || isBleedLayerOf(l, layer.name))) await old.delete();
           if (await hasUserMask(layer.id)) {
             await selectLayer(layer.id);
             await batchPlay([{ _obj: "delete", _target: [{ _ref: "channel", _enum: "channel", _value: "mask" }] }], {});
@@ -1123,7 +1218,7 @@ async function removeDistress() {
     }, { commandName: "MS Distress remove" });
     for (const id of ids) lastApplied.delete(doc.id + ":" + id);
     log("REMOVE", { layers: layers.map((l) => l.name) });
-    setStatus("Mask(s) and colour layers removed.");
+    setStatus("Mask(s), colour and ink bleed layers removed.");
   } catch (e) {
     setStatus("Error while removing: " + (e.message || e), true);
   }
