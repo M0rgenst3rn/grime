@@ -31,9 +31,10 @@ The effect is created as a **layer mask**. So your text stays editable, and ⌘Z
 - **Combine two textures**: blend, add or mask
 - **Live**: slider changes land directly on the canvas, as *one* history step
 - **Shape Color**: worn areas are tinted in a colour of your choice
+- **Ink Bleed**: ink soaks past the edge into the paper – blotchy, with fine tendrils along the fibres, on its own layer
 - **Fade**: the effect fades, e.g. from the top, radially, as a frame or in clouds – on the distress or the opacity
 - **Several layers at once**, optionally with its own variation per layer
-- **11 looks** plus your own presets
+- **12 looks** plus your own presets
 - **A tidy panel**: collapsible sections, its own colour palette, the essentials on top, everything else in Fine-tuning
 - **Self-test & Verify**: the plugin checks whether the canvas really matches the settings
 
@@ -68,6 +69,21 @@ visible repetition. **Seed** (Shuffle) gives endless variants of every texture.
 
 The textures are equalised internally. **So 40 % distress means roughly 40 % worn-away area with every
 texture.** When you switch textures, the strength stays the same.
+
+## Ink Bleed
+
+Printed ink soaks into the paper: it creeps past the edge in soft blotches and runs further along the paper
+fibres in fine tendrils; small gaps fill up. Turn on **Ink Bleed** and set:
+
+- **Spread**: how far the ink soaks past the edge (px)
+- **Fibres**: how many fine tendrils run along the fibres
+- **Opacity** and the **ink colour**: the layer's own colour, or one of your choice
+
+It goes on its own layer right below the layer ("… · Ink bleed"), so your text stays editable and the bleed
+can be changed or hidden on its own. It grows from the ink that is left after the distress, so worn-away
+areas don't bleed. **Remove** deletes it together with the mask.
+
+<p align="center"><img src="docs/images/ink-bleed.png" alt="Ink Bleed"></p>
 
 ## Combining textures
 

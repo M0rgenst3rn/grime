@@ -284,6 +284,12 @@ const DEFAULTS = {
   texture2Mix: 50,
   texture2Mode: "blend",
   texture2Invert: false,
+  bleedEnabled: false,      // ink bleed: ink spreading past the edge into the paper
+  bleedSpread: 4,           // how far it reaches, px
+  bleedFibres: 40,          // fine tendrils along paper fibres, %
+  bleedOpacity: 90,         // %
+  bleedColorMode: "layer",  // layer = the layer's own colour | custom = bleedColor
+  bleedColor: "#1b1b1b",
 };
 
 const MIX_MODES = [
@@ -516,6 +522,82 @@ function computeMask(o) {
   return { mask, color };
 }
 
+// chamfer distance of every empty pixel (255) to the nearest ink pixel (0); outside the image counts as empty
+function outsideDistance(empty, w, h) {
+  const d = new Float32Array(w * h), D = Math.SQRT2, INF = 1e6;
+  for (let i = 0; i < d.length; i++) d[i] = empty[i] ? INF : 0;
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    const i = y * w + x;
+    if (!d[i]) continue;
+    let m = d[i];
+    if (x > 0) m = Math.min(m, d[i - 1] + 1);
+    if (y > 0) { m = Math.min(m, d[i - w] + 1); if (x > 0) m = Math.min(m, d[i - w - 1] + D); if (x < w - 1) m = Math.min(m, d[i - w + 1] + D); }
+    d[i] = m;
+  }
+  for (let y = h - 1; y >= 0; y--) for (let x = w - 1; x >= 0; x--) {
+    const i = y * w + x;
+    if (!d[i]) continue;
+    let m = d[i];
+    if (x < w - 1) m = Math.min(m, d[i + 1] + 1);
+    if (y < h - 1) { m = Math.min(m, d[i + w] + 1); if (x < w - 1) m = Math.min(m, d[i + w + 1] + D); if (x > 0) m = Math.min(m, d[i + w - 1] + D); }
+    d[i] = m;
+  }
+  return d;
+}
+
+// ---------------------------------------------------------------- Ink bleed
+// Ink that soaks past the edge into the paper: it creeps out unevenly in soft blotches and runs further along
+// paper fibres in fine tendrils; small gaps fill up. It grows from the ink that is left after the distress
+// (alpha × mask), so worn-away areas don't bleed. Coordinates are document pixels (preview = final).
+// Returns { alpha (Uint8Array), w, h, pad } – pad = samples it reaches beyond the input on every side.
+function bleedPad(p, pxScale) { return Math.ceil(p.bleedSpread * 2.4 / (pxScale || 1)) + 2; }
+function computeBleed(o) {
+  const { alpha, mask, width: w, height: h, originX, originY } = o, pxScale = o.pxScale || 1;
+  const p = Object.assign({}, DEFAULTS, o.params), seed = (p.seed | 0) + 909;
+  const pad = bleedPad(p, pxScale), W = w + 2 * pad, H = h + 2 * pad;
+  // where there is no ink (255), padded; the distance of every such pixel to the nearest ink
+  const empty = new Uint8Array(W * H).fill(255);
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    const i = y * w + x, ink = mask ? alpha[i] * mask[i] / 255 : alpha[i];
+    if (ink >= 128) empty[(y + pad) * W + x + pad] = 0;
+  }
+  const dist = outsideDistance(empty, W, H);
+  const spread = Math.max(0.1, p.bleedSpread / pxScale) * pxScale, fib = p.bleedFibres / 100;
+  // paper fibres: thin lines in three random directions, long along, narrow across – and only here and there
+  const dirs = angles(seed, 3), along = spread * 8, across = Math.max(1.4, spread * 0.45), blot = spread * 2.2;
+  const edgeSoft = Math.max(0.6 * pxScale, spread * 0.12);
+  const out = new Uint8Array(W * H);
+  for (let y = 0; y < H; y++) {
+    const yd = originY + (y - pad + 0.5) * pxScale;
+    for (let x = 0; x < W; x++) {
+      const i = y * W + x;
+      if (!empty[i]) { out[i] = 255; continue; }
+      const d = dist[i] * pxScale;
+      if (d > spread * 2.4) continue;
+      const xd = originX + (x - pad + 0.5) * pxScale;
+      // blotchy reach + fibres that carry the ink further
+      let reach = spread * (0.2 + 1.1 * clamp01(0.5 + 1.2 * fbm(xd / blot, yd / blot, 3, seed)));
+      if (fib > 0) {
+        let f = 0;
+        // fibres curve a little: the position is bent by a slow noise
+        const bx = xd + spread * 2.5 * perlin(xd / (spread * 7), yd / (spread * 7), seed + 5), by = yd + spread * 2.5 * perlin(xd / (spread * 7) + 9.7, yd / (spread * 7), seed + 6);
+        for (let k = 0; k < 3; k++) {
+          const [ca, sa] = dirs[k], u = (bx * ca + by * sa) / along, v = (-bx * sa + by * ca) / across;
+          let r = 1 - Math.abs(perlin(u, v, seed + 31 * k));
+          r *= r; r *= r; r *= r;   // ^8: thin lines
+          f = Math.max(f, r * smooth(0.1, 0.6, perlin(u * 0.7 + 3.1, v * 0.05, seed + 77 + k)));
+        }
+        reach += spread * 1.8 * fib * f;
+      }
+      if (d >= reach + edgeSoft) continue;
+      // thinner the further it soaked, crisp-soft outer edge
+      const a = (1 - smooth(reach - edgeSoft, reach + edgeSoft, d)) * (1 - 0.45 * clamp01(d / Math.max(0.5, reach)));
+      out[i] = (a * 255 + 0.5) | 0;
+    }
+  }
+  return { alpha: out, w: W, h: H, pad };
+}
+
 // small preview of a texture (greyscale, 255 = paint stays).
 function renderThumb(texId, size, customTex) {
   const p = Object.assign({}, DEFAULTS, { texture: texId, seed: 7 });
@@ -536,5 +618,5 @@ function renderThumb(texId, size, customTex) {
 module.exports = {
   TEXTURES: TEXTURES.map((t) => ({ id: t.id, name: t.name })),
   FADE_STYLES, MIX_MODES, DEFAULTS,
-  buildSampler, buildCDF, buildPipeline, computeMask, renderThumb,
+  buildSampler, buildCDF, buildPipeline, computeMask, computeBleed, bleedPad, renderThumb,
 };
