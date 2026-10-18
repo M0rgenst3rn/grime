@@ -5,7 +5,7 @@
 <p align="center">
   <b>Distressed, grunge and print looks for Photoshop – one click, non-destructive, on text, shapes and any layer.</b><br>
   <sub>Photoshop 2023 (24.2) or newer · UXP panel · macOS & Windows</sub><br>
-  <sub>Free Photoshop tools by <b>Morgenstern</b> · <b>Morgenstern Distress</b> · <a href="https://github.com/M0rgenst3rn/ms-printer">Morgenstern Printer</a> · <a href="https://github.com/M0rgenst3rn/ms-render">Morgenstern Render</a> · <a href="https://github.com/M0rgenst3rn/ms-phase">Morgenstern Phase</a> · <a href="https://github.com/M0rgenst3rn/ms-glow">Morgenstern Glow</a> · <a href="https://github.com/M0rgenst3rn/ms-gradients">Morgenstern Gradients</a></sub>
+  <sub>Free Photoshop tools by <b>Morgenstern</b> · <b>Morgenstern Distress</b> · <a href="https://github.com/M0rgenst3rn/ms-printer">Morgenstern Printer</a> · <a href="https://github.com/M0rgenst3rn/ms-render">Morgenstern Render</a> · <a href="https://github.com/M0rgenst3rn/ms-phase">Morgenstern Phase</a> · <a href="https://github.com/M0rgenst3rn/ms-glow">Morgenstern Glow</a> · <a href="https://github.com/M0rgenst3rn/ms-gradients">Morgenstern Gradients</a> · <a href="https://github.com/M0rgenst3rn/ms-grids">Morgenstern Grids</a></sub>
 </p>
 
 ---
