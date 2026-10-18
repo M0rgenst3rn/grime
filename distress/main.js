@@ -6,6 +6,7 @@
 const { app, core, action, imaging } = require("photoshop");
 const { batchPlay } = action;
 const Core = require("./core.js");
+const UI = require("./ms-ui.js");
 const uxpStorage = require("uxp").storage;
 const lfs = uxpStorage.localFileSystem;
 
@@ -29,16 +30,16 @@ const BUILTIN_PRESETS = {
 };
 
 const SLIDERS = [
-  { key: "scale", label: "Scale", min: 10, max: 500, step: 1, unit: "%", parent: "secTexture" },
-  { key: "rotation", label: "Rotation", min: 0, max: 360, step: 1, unit: "°", parent: "secTexture" },
+  { key: "scale", label: "Größe", min: 10, max: 500, step: 1, unit: "%", parent: "secTexture" },
+  { key: "rotation", label: "Winkel", min: 0, max: 360, step: 1, unit: "°", parent: "secTexture" },
   { key: "shapeDistress", label: "Shape Distress", min: 0, max: 100, step: 1, unit: "%", parent: "secShape" },
   { key: "shapeMeld", label: "Shape Meld", min: 0, max: 100, step: 1, unit: "%", parent: "secShape" },
   { key: "edgeRoughness", label: "Edge Roughness", min: 0, max: 60, step: 0.5, unit: "px", parent: "secShape" },
   { key: "innerDistress", label: "Inner Distress", min: 0, max: 100, step: 1, unit: "%", parent: "secInner" },
   { key: "innerEdgeSize", label: "Inner Edge Size", min: 0, max: 200, step: 1, unit: "px", parent: "secInner" },
-  { key: "fadeAmount", label: "Fade Amount", min: 0, max: 100, step: 1, unit: "%", parent: "secFade" },
-  { key: "texture2Mix", label: "Mix", min: 0, max: 100, step: 1, unit: "%", parent: "secTexture2" },
-  { key: "texture2Scale", label: "Scale 2", min: 10, max: 500, step: 1, unit: "%", parent: "secTexture2" },
+  { key: "fadeAmount", label: "Stärke", min: 0, max: 100, step: 1, unit: "%", parent: "secFade" },
+  { key: "texture2Mix", label: "Anteil", min: 0, max: 100, step: 1, unit: "%", parent: "secTexture2" },
+  { key: "texture2Scale", label: "Größe", min: 10, max: 500, step: 1, unit: "%", parent: "secTexture2" },
   { key: "colorOpacity", label: "Farb-Deckkraft", min: 0, max: 100, step: 1, unit: "%", parent: "secColor" },
 ];
 
@@ -221,60 +222,53 @@ function fromBuf8(buf, doc) {
   return buf;
 }
 
-// ---------------------------------------------------------------- UI aufbauen
+// ---------------------------------------------------------------- Bedienelemente (Morgenstern-Design, ms-ui.js)
 
 function buildSliders() {
   for (const s of SLIDERS) {
-    const row = document.createElement("div");
-    row.className = "ctl";
-    row.innerHTML =
-      `<span class="ctl-label">${s.label}</span>` +
-      `<sp-slider class="ctl-range" min="${s.min}" max="${s.max}" step="${s.step}"></sp-slider>` +
-      `<input class="ctl-num" type="text"><span class="ctl-unit">${s.unit}</span>`;
-    $(s.parent).appendChild(row);
-    const range = row.querySelector(".ctl-range");
-    const num = row.querySelector(".ctl-num");
-    ctl[s.key] = { range, num, def: s };
-    const onRange = () => {
-      params[s.key] = Number(range.value);
-      num.value = String(params[s.key]);
-      changed();
-    };
-    range.addEventListener("input", onRange);
-    range.addEventListener("change", onRange);
-    num.addEventListener("change", () => {
-      let v = parseFloat(String(num.value).replace(",", "."));
-      if (isNaN(v)) v = params[s.key];
-      v = Math.max(s.min, Math.min(s.max, v));
-      params[s.key] = v;
-      syncUI();
-      changed();
+    ctl[s.key] = UI.slider($(s.parent), Object.assign({ def: Core.DEFAULTS[s.key] }, s), {
+      get: () => params[s.key],
+      set: (v) => { params[s.key] = v; changed(); },
+      done: () => syncUI(),
     });
   }
 }
 
+// Texturen: zuerst eine kurze Auswahl, „Alle Texturen“ zeigt den Rest.
+// „Haupt“ setzt die erste, „Zweite“ die zweite Textur.
+const TEX_SHORT = 12;
+let texSlot = "1";
+let texShowAll = false;
+const thumbCache = {};
 function buildTextureGrid() {
   const grid = $("texGrid");
   grid.innerHTML = "";
-  const list = Core.TEXTURES
-    .concat(imageTextures.map((t) => ({ id: t.id, name: t.name })))
-    .concat([{ id: "custom", name: "Eigene Ebene" }, { id: "__add", name: "+ Bild laden" }]);
+  const all = Core.TEXTURES.map((t) => ({ id: t.id, name: t.name }));
+  const cur = texSlot === "2" ? params.texture2 : params.texture;
+  let list = texShowAll ? all : all.slice(0, TEX_SHORT);
+  if (!texShowAll && cur && !list.some((t) => t.id === cur)) { const c = all.find((t) => t.id === cur); if (c) list = list.concat([c]); }
+  list = list.concat(imageTextures.map((t) => ({ id: t.id, name: t.name })));
+  if (texSlot === "1") list.push({ id: "custom", name: "Eigene Ebene" });
+  list.push({ id: "__add", name: "Bild laden" });
   for (const t of list) {
     const tile = document.createElement("div");
     tile.className = "tile";
     tile.dataset.id = t.id;
-    tile.innerHTML = `<div class="ph"></div><div class="lbl">${t.name}</div>`;
     tile.title = t.name;
-    if (t.id === "__add") tile.innerHTML = `<div class="ph add">+</div><div class="lbl">Bild laden…</div>`;
+    tile.innerHTML = t.id === "__add"
+      ? `<div class="ph add">+</div><div class="lbl">Bild laden…</div>`
+      : (thumbCache[t.id] ? `<img src="${thumbCache[t.id]}">` : `<div class="ph"></div>`) + `<div class="lbl">${UI.esc(t.name)}</div>`;
     tile.addEventListener("click", () => {
       if (t.id === "__add") return importImageTextures();
-      params.texture = t.id;
+      if (texSlot === "2") params.texture2 = t.id; else params.texture = t.id;
       syncUI();
       if (t.id === "custom") refreshCustomLayers();
       changed();
     });
     grid.appendChild(tile);
   }
+  $("texMore").textContent = texShowAll ? "Weniger zeigen" : `Alle ${all.length} Texturen`;
+  syncUI();
   renderThumbs();
 }
 
@@ -284,17 +278,19 @@ async function renderThumbs() {
   const all = Core.TEXTURES.concat(imageTextures);
   for (const t of all) {
     try {
-      const g = Core.renderThumb(t.id, size, texData(t.id));
-      const rgb = new Uint8Array(size * size * 3);
-      for (let i = 0; i < g.length; i++) {
-        const v = 40 + g[i] * 0.85;
-        rgb[i * 3] = v; rgb[i * 3 + 1] = v; rgb[i * 3 + 2] = v;
+      if (!thumbCache[t.id]) {
+        const g = Core.renderThumb(t.id, size, texData(t.id));
+        const rgb = new Uint8Array(size * size * 3);
+        for (let i = 0; i < g.length; i++) {
+          const v = 40 + g[i] * 0.85;
+          rgb[i * 3] = v; rgb[i * 3 + 1] = v; rgb[i * 3 + 2] = v;
+        }
+        thumbCache[t.id] = await encodeRGB(rgb, size, size);
       }
-      const src = await encodeRGB(rgb, size, size);
       const tile = document.querySelector(`.tile[data-id="${t.id}"]`);
-      if (tile && src) {
+      if (tile && thumbCache[t.id] && tile.firstChild && tile.firstChild.tagName !== "IMG") {
         const img = document.createElement("img");
-        img.src = src;
+        img.src = thumbCache[t.id];
         tile.replaceChild(img, tile.firstChild);
       }
     } catch (e) { console.log("Thumb-Fehler", t.id, e); return; }
@@ -313,78 +309,106 @@ async function encodeRGB(rgb, w, h) {
   }
 }
 
+const FADE_TARGETS = [{ id: "distress", name: "Distress" }, { id: "opacity", name: "Deckkraft" }, { id: "both", name: "Beides" }];
+const pick = (key) => (v) => { params[key] = v; syncUI(); changed(); };
 function buildSelects() {
-  $("fadeStyle").innerHTML = Core.FADE_STYLES.map((f) => `<option value="${f.id}">${f.name}</option>`).join("");
-  $("texture2Mode").innerHTML = Core.MIX_MODES.map((f) => `<option value="${f.id}">${f.name}</option>`).join("");
-  buildTexture2Select();
+  UI.seg($("fadeStyleSeg"), Core.FADE_STYLES, pick("fadeStyle"));
+  UI.seg($("fadeTargetSeg"), FADE_TARGETS, pick("fadeTarget"));
+  UI.seg($("texture2ModeSeg"), Core.MIX_MODES.map((m) => ({ id: m.id, name: m.name.replace(/ \(.*\)$/, ""), tip: m.name })), pick("texture2Mode"));
+  UI.seg($("slotSeg"), [{ id: "1", name: "Haupt" }, { id: "2", name: "Zweite" }], (v) => { texSlot = v; buildTextureGrid(); });
+  UI.seg($("lookList"), Object.keys(BUILTIN_PRESETS).map((n) => ({ id: n, name: n })), (n) => {
+    params = Object.assign({}, Core.DEFAULTS, { seed: params.seed, varySeed: params.varySeed }, BUILTIN_PRESETS[n]);
+    texSlot = "1"; buildTextureGrid(); changed();
+    setStatus(`Look „${n}“ – alle Regler bleiben frei einstellbar.`);
+  });
   rebuildPresetSelect();
 }
-
-function buildTexture2Select() {
-  let html = `<option value="">– keine –</option>`;
-  html += Core.TEXTURES.map((t) => `<option value="${t.id}">${t.name}</option>`).join("");
-  if (imageTextures.length) {
-    html += `<option value="" disabled>── Bilder ──</option>`;
-    html += imageTextures.map((t) => `<option value="${t.id}">🖼 ${t.name}</option>`).join("");
+function buildTexture2Select() { buildTextureGrid(); }
+// eingebaute Looks: aktiv, solange alle Werte dazu passen
+function activeLook() {
+  for (const n of Object.keys(BUILTIN_PRESETS)) {
+    const ref = Object.assign({}, Core.DEFAULTS, BUILTIN_PRESETS[n]);
+    if (Object.keys(ref).every((k) => k === "seed" || k === "varySeed" || JSON.stringify(ref[k]) === JSON.stringify(params[k]))) return n;
   }
-  $("texture2").innerHTML = html;
-  $("texture2").value = params.texture2 || "";
+  return "";
 }
 
+// eigene Presets als Liste: Klick lädt, × löscht
 function rebuildPresetSelect() {
-  const user = loadUserPresets();
-  let html = `<option value="">– Preset wählen –</option>`;
-  for (const n of Object.keys(BUILTIN_PRESETS)) html += `<option value="b:${n}">${n}</option>`;
-  const userNames = Object.keys(user);
-  if (userNames.length) {
-    html += `<option value="" disabled>── Eigene ──</option>`;
-    for (const n of userNames) html += `<option value="u:${n}">★ ${n}</option>`;
-  }
-  $("presetSelect").innerHTML = html;
-  $("presetSelect").value = "";
+  UI.presetList($("presetList"), Object.keys(loadUserPresets()),
+    (n) => { params = Object.assign({}, Core.DEFAULTS, { seed: params.seed, varySeed: params.varySeed }, loadUserPresets()[n]); buildTextureGrid(); changed(); setStatus(`Preset „${n}“ geladen.`); },
+    (n) => { const u = loadUserPresets(); delete u[n]; saveUserPresets(u); rebuildPresetSelect(); setStatus(`Preset „${n}“ gelöscht.`); });
+}
+
+// Eigene Ebene als Textur: Liste der Ebenen statt Ausklappliste
+function refreshCustomLayers() {
+  const doc = app.activeDocument;
+  const box = $("customLayer");
+  if (!doc) { box.innerHTML = `<div class="empty">Kein Dokument geöffnet.</div>`; return; }
+  const layers = allLayers(doc.layers).filter((l) => l.kind !== "group");
+  const cur = customTex ? customTex.layerId : null;
+  box.innerHTML = layers.map((l) => `<div class="layer-item${l.id === cur ? " active" : ""}" data-id="${l.id}">${UI.esc(l.name)}</div>`).join("");
+  box.querySelectorAll(".layer-item").forEach((el) => el.addEventListener("click", async () => {
+    await loadCustomTexture(parseInt(el.getAttribute("data-id"), 10));
+    refreshCustomLayers();
+  }));
 }
 
 function syncUI() {
-  for (const key of Object.keys(ctl)) {
-    ctl[key].range.value = String(params[key]);
-    ctl[key].num.value = String(params[key]);
-  }
+  for (const key of Object.keys(ctl)) ctl[key].set(params[key]);
+  const cur = texSlot === "2" ? params.texture2 : params.texture;
   document.querySelectorAll(".tile").forEach((el) => {
-    el.className = el.dataset.id === params.texture ? "tile active" : "tile";
+    const id = el.dataset.id;
+    el.className = "tile" + (id === cur ? " active" : (texSlot === "1" && id === params.texture2) || (texSlot === "2" && id === params.texture) ? " second" : "");
   });
-  $("texName").textContent = "· " + texLabel(params.texture) + (params.texture2 ? " + " + texLabel(params.texture2) : "");
-  $("deleteImgTex").className = String(params.texture).startsWith("img:") ? "" : "hidden";
-  $("texture2").value = params.texture2 || "";
-  $("texture2Mode").value = params.texture2Mode;
-  $("texture2Invert").checked = !!params.texture2Invert;
+  UI.syncSeg($("slotSeg"), texSlot);
+  $("texName").textContent = texLabel(params.texture) + (params.texture2 ? " + " + texLabel(params.texture2) : "");
+  $("slot1").className = texSlot === "1" ? "" : "hidden";
+  $("slot2").className = texSlot === "2" ? "" : "hidden";
+  $("deleteImgTex").className = String(params.texture).startsWith("img:") ? "btn small ghost" : "btn small ghost hidden";
+  $("tex2Empty").className = params.texture2 ? "empty hidden" : "empty";
   $("tex2Controls").className = params.texture2 ? "" : "hidden";
-  $("customRow").className = params.texture === "custom" ? "" : "hidden";
+  $("customRow").className = texSlot === "1" && params.texture === "custom" ? "subgroup" : "subgroup hidden";
   $("invert").checked = !!params.invert;
-  $("fadeStyle").value = params.fadeStyle;
-  $("fadeTarget").value = params.fadeTarget;
+  $("texture2Invert").checked = !!params.texture2Invert;
+  UI.syncSeg($("texture2ModeSeg"), params.texture2Mode);
+  UI.syncSeg($("fadeStyleSeg"), params.fadeStyle);
+  UI.syncSeg($("fadeTargetSeg"), params.fadeTarget);
+  $("fadeOpts").className = params.fadeAmount > 0 ? "subgroup" : "subgroup hidden";
   $("colorEnabled").checked = !!params.colorEnabled;
-  $("colorHex").value = params.color;
   $("swatch").style.backgroundColor = params.color;
+  $("colorMeta").textContent = params.colorEnabled ? params.color : "";
+  $("secColor").className = params.colorEnabled ? "" : "hidden";
   $("seed").value = String(params.seed);
   $("varySeed").checked = !!params.varySeed;
+  UI.syncSeg($("lookList"), activeLook());
+  $("lookName").textContent = activeLook();
+  UI.syncSwitches();
 }
 
+const SEC_KEY = "msdistress.sections.v1";
+const SEC_DEFAULT = { looks: true, texture: true, wear: true, color: false, fade: false, more: false };
 function bindControls() {
-  $("invert").addEventListener("change", (e) => { params.invert = e.target.checked; changed(); });
-  $("texture2").addEventListener("change", (e) => { params.texture2 = e.target.value; syncUI(); changed(); });
-  $("texture2Mode").addEventListener("change", (e) => { params.texture2Mode = e.target.value; changed(); });
-  $("texture2Invert").addEventListener("change", (e) => { params.texture2Invert = e.target.checked; changed(); });
-  $("deleteImgTex").addEventListener("click", () => deleteImageTexture(params.texture));
-  $("fadeStyle").addEventListener("change", (e) => { params.fadeStyle = e.target.value; changed(); });
-  $("fadeTarget").addEventListener("change", (e) => { params.fadeTarget = e.target.value; changed(); });
-  $("colorEnabled").addEventListener("change", (e) => { params.colorEnabled = e.target.checked; changed(); });
-  $("colorHex").addEventListener("change", (e) => {
-    let v = String(e.target.value).trim();
-    if (v[0] !== "#") v = "#" + v;
-    if (/^#[0-9a-f]{6}$/i.test(v)) params.color = v.toLowerCase();
-    syncUI(); changed();
+  UI.sections(SEC_KEY, SEC_DEFAULT);
+  UI.bindSwitch("invert", (on) => { params.invert = on; changed(); });
+  UI.bindSwitch("texture2Invert", (on) => { params.texture2Invert = on; changed(); });
+  UI.bindSwitch("colorEnabled", (on) => { params.colorEnabled = on; syncUI(); changed(); });
+  UI.bindSwitch("varySeed", (on) => { params.varySeed = on; saveParams(); });
+  UI.bindSwitch("previewDark", () => renderPreview());
+  UI.bindSwitch("liveCanvas", (on) => {
+    liveLast = null;
+    if (on) applyDistress(true);
+    else setStatus("Live aus – der aktuelle Stand bleibt auf der Ebene.");
   });
-  $("swatch").addEventListener("click", pickColor);
+  $("texMore").addEventListener("click", () => { texShowAll = !texShowAll; buildTextureGrid(); });
+  $("clearTex2").addEventListener("click", () => { params.texture2 = ""; syncUI(); changed(); });
+  $("deleteImgTex").addEventListener("click", () => deleteImageTexture(params.texture));
+  $("swatch").addEventListener("click", () => UI.openColorPop({
+    pop: $("colorPop"), key: "color", anchor: $("swatch"),
+    get: () => params.color,
+    set: (c) => { params.color = c; params.colorEnabled = true; syncUI(); changed(); },
+    exact: () => pickColor(),
+  }));
   $("fgColor").addEventListener("click", () => {
     try {
       params.color = "#" + app.foregroundColor.rgb.hexValue.toLowerCase();
@@ -398,23 +422,10 @@ function bindControls() {
     syncUI(); changed();
   });
   $("dice").addEventListener("click", () => { params.seed = Math.floor(Math.random() * 99999); syncUI(); changed(); });
-  $("varySeed").addEventListener("change", (e) => { params.varySeed = e.target.checked; saveParams(); });
-  $("previewDark").addEventListener("change", () => renderPreview());
   $("refreshPreview").addEventListener("click", () => refreshPreviewSource());
-  $("customLayer").addEventListener("change", (e) => loadCustomTexture(parseInt(e.target.value, 10)));
-
-  $("presetSelect").addEventListener("change", (e) => {
-    const v = e.target.value;
-    if (!v) return;
-    const src = v.startsWith("b:") ? BUILTIN_PRESETS[v.slice(2)] : loadUserPresets()[v.slice(2)];
-    if (!src) return;
-    params = Object.assign({}, Core.DEFAULTS, { seed: params.seed, varySeed: params.varySeed }, src);
-    syncUI(); changed();
-    setStatus(`Preset „${v.slice(2)}“ geladen.`);
-  });
   $("presetSave").addEventListener("click", () => {
     const name = String($("presetName").value || "").trim();
-    if (!name) return setStatus("Bitte einen Namen für das Preset eingeben.", true);
+    if (!name) return setStatus("Gib dem Preset zuerst einen Namen.", true);
     const user = loadUserPresets();
     user[name] = Object.assign({}, params);
     saveUserPresets(user);
@@ -422,25 +433,7 @@ function bindControls() {
     $("presetName").value = "";
     setStatus(`Preset „${name}“ gespeichert.`);
   });
-  $("presetDelete").addEventListener("click", () => {
-    const v = $("presetSelect").value;
-    if (!v.startsWith("u:")) return setStatus("Wähle zuerst ein eigenes Preset (★) aus.", true);
-    const user = loadUserPresets();
-    delete user[v.slice(2)];
-    saveUserPresets(user);
-    rebuildPresetSelect();
-    setStatus("Preset gelöscht.");
-  });
-  $("resetAll").addEventListener("click", () => {
-    params = Object.assign({}, Core.DEFAULTS);
-    syncUI(); changed();
-  });
-
-  $("liveCanvas").addEventListener("change", (e) => {
-    liveLast = null;
-    if (e.target.checked) applyDistress(true);
-    else setStatus("Live aus – der aktuelle Stand bleibt auf der Ebene.");
-  });
+  $("resetAll").addEventListener("click", () => { params = Object.assign({}, Core.DEFAULTS); syncUI(); changed(); });
   $("apply").addEventListener("click", () => applyDistress(false));
   $("remove").addEventListener("click", removeDistress);
   $("verify").addEventListener("click", verifyCanvas);
@@ -465,7 +458,7 @@ function showSyncHint() {
     const applied = lastApplied.get(doc.id + ":" + layer.id);
     if (!applied) return;
     const diff = diffParams(effectiveParams(paramsFor(0)), applied);
-    if (diff.length) setStatus(`● Noch nicht auf dem Canvas: ${diff.join(", ")} – „Distress anwenden“ klicken oder Live einschalten.`);
+    if (diff.length) setStatus(`● Noch nicht auf dem Canvas: ${diff.join(", ")} – „Anwenden“ klicken oder Live einschalten.`);
     else setStatus("Canvas entspricht den Einstellungen.");
   } catch (e) { /* egal */ }
 }
@@ -825,16 +818,6 @@ async function renderPreview(msg) {
 
 // ---------------------------------------------------------------- Eigene Textur
 
-function refreshCustomLayers() {
-  const doc = app.activeDocument;
-  const sel = $("customLayer");
-  if (!doc) { sel.innerHTML = ""; return; }
-  const layers = allLayers(doc.layers).filter((l) => l.kind !== "group");
-  sel.innerHTML = `<option value="">– Ebene wählen –</option>` +
-    layers.map((l) => `<option value="${l.id}">${l.name}</option>`).join("");
-  sel.value = customTex ? String(customTex.layerId) : "";
-}
-
 async function loadCustomTexture(layerId) {
   if (!layerId) { customTex = null; return renderPreview(); }
   const doc = app.activeDocument;
@@ -1167,6 +1150,12 @@ async function init() {
   try {
     action.addNotificationListener(["select", "make", "delete", "open", "close", "set", "move", "transform", "placedLayerEditContents"], onPsEvent);
   } catch (e) { console.log("Event-Listener nicht verfügbar", e); }
+  // Entwickler-Hook: eine Datei „run-selftest“ im Datenordner startet den Selbsttest (und wird gelöscht)
+  let hookRunning = false;
+  setInterval(async () => {
+    if (busy || hookRunning) return;
+    try { const f = await (await lfs.getDataFolder()).getEntry("run-selftest"); await f.delete(); hookRunning = true; try { await runSelfTest(); } finally { hookRunning = false; } } catch (e) { /* kein Auftrag */ }
+  }, 3000);
   refreshPreviewSource();
   if (params.texture === "custom") refreshCustomLayers();
 }

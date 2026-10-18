@@ -30,7 +30,7 @@ ist alles wieder rückgängig.
 - **Eigene Bilder als Texturen**: PNG, JPG, TIF oder PSD laden. Sie werden dauerhaft als Kachel gespeichert
 - **Eine Ebene als Textur**: Jede Ebene im Dokument kann als Textur dienen
 - **Zwei Texturen kombinieren**: Überblenden, Addieren oder Maskieren
-- **Live auf Canvas**: Änderungen an den Reglern landen direkt auf der Arbeitsfläche, als *ein* Protokollschritt
+- **Live**: Änderungen an den Reglern landen direkt auf der Arbeitsfläche, als *ein* Protokollschritt
 - **Shape Color**: Abgetragene Stellen werden in einer Farbe deiner Wahl eingefärbt
 - **Fade**: Der Effekt verläuft, zum Beispiel von oben, radial, als Rahmen oder in Wolken, wahlweise auf Distress oder Deckkraft
 - **Mehrere Ebenen gleichzeitig**, auf Wunsch mit eigener Variation pro Ebene
@@ -44,7 +44,7 @@ ist alles wieder rückgängig.
 ## Texturen
 
 Alle 36 Texturen sind prozedural, also mathematisch erzeugt. Darum werden sie in jeder Größe scharf und haben
-keine sichtbaren Wiederholungen. Über **Random Seed** bekommst du von jeder Textur unendlich viele Varianten.
+keine sichtbaren Wiederholungen. Über **Zufall** (Würfeln) bekommst du von jeder Textur unendlich viele Varianten.
 
 <p align="center"><img src="docs/images/texturen.png" alt="Übersicht aller 36 Texturen"></p>
 
@@ -54,24 +54,24 @@ keine sichtbaren Wiederholungen. Über **Random Seed** bekommst du von jeder Tex
 
 | Regler | Was er macht |
 |---|---|
-| **Scale / Rotation** | Größe (10–500 %) und Drehung der Textur |
+| **Größe / Winkel** | Größe (10–500 %) und Drehung der Textur |
 | **Shape Distress** | Wie stark die Kanten der Form abgetragen werden |
 | **Shape Meld** | Übergang: 0 = harte Stempelkanten, 100 = weich verschmolzen |
 | **Edge Roughness** | Fransige, angeknabberte Außenkante (in Pixeln) |
 | **Inner Distress** | Wie stark das Innere der Form abgetragen wird |
 | **Inner Edge Size** | Breite der Kantenzone, in der *Shape Distress* gilt. Dahinter gilt *Inner Distress* |
-| **Fade Amount / Style** | Lässt den Effekt verlaufen: von oben, unten, links, rechts, diagonal, radial, als Rahmen oder in Wolken |
+| **Verlauf: Stärke / Richtung** | Lässt den Effekt verlaufen: von oben, unten, links, rechts, diagonal, radial, als Rahmen oder in Wolken |
 | **Fade wirkt auf** | Distress, Deckkraft oder beides |
 | **Shape Color** | Färbt abgetragene Stellen ein, auf einer eigenen, frei editierbaren Ebene |
 | **Textur invertieren** | Vertauscht, welche Bereiche zuerst abgetragen werden |
-| **Random Seed** | Neue Variante derselben Einstellung (🎲 Würfeln) |
+| **Zufall** | Neue Variante derselben Einstellung (Würfeln) |
 
 Die Texturen werden intern gleichverteilt. **40 % Distress bedeuten deshalb bei jeder Textur ungefähr 40 %
 abgetragene Fläche.** Wechselst du die Textur, bleibt die Stärke gleich.
 
 ## Texturen kombinieren
 
-Unter **Textur 2** legst du eine zweite Textur über die erste, mit eigenem Mix und eigener Scale:
+Mit **Zweite** über den Texturen legst du eine zweite Textur über die erste, mit eigenem Anteil und eigener Größe:
 
 <p align="center"><img src="docs/images/kombinieren.png" alt="Zwei Texturen kombinieren"></p>
 
@@ -104,7 +104,7 @@ danach und entfernt es nicht wieder.
 
 1. Eine oder mehrere Ebenen auswählen (Text, Form, Smartobjekt, Pixel)
 2. Eine Textur anklicken und die Regler einstellen. Die Vorschau oben zeigt das Ergebnis sofort
-3. **Distress anwenden** klicken, oder **Live auf Canvas** einschalten
+3. **Anwenden** klicken, oder **Live** einschalten
 4. Fertig. Mit **Entfernen** nimmst du Maske und Farbebene wieder weg
 
 **Tipps**
