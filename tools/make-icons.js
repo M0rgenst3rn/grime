@@ -1,4 +1,4 @@
-// Creates the plugin icons (a "weathered" D) with its own engine.
+// Creates the plugin icons (a "weathered" G) with its own engine.
 const fs = require("fs");
 const path = require("path");
 const Core = require(path.join(__dirname, "..", "distress", "core.js"));
@@ -11,11 +11,11 @@ function icon(size, file) {
   const alpha = new Uint8Array(size * size);
   const m = size * 0.16, stroke = size * 0.2;
   for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) {
-    // letter D: left bar + half-ring
-    const cx = size * 0.42, cy = size / 2, r = size / 2 - m;
-    const inBar = x >= m && x < m + stroke && y >= m && y < size - m;
-    const dx = x - cx, dy = y - cy, d = Math.sqrt(dx * dx + dy * dy);
-    const inRing = (x >= cx ? d <= r && d >= r - stroke : (y < m + stroke || y >= size - m - stroke) && x >= m && y >= m && y < size - m);
+    // letter G: ring with a gap at the upper right + a bar in the middle
+    const cx = size / 2, cy = size / 2, r = size / 2 - m;
+    const dx = x - cx, dy = y - cy, d = Math.sqrt(dx * dx + dy * dy), ang = Math.atan2(dy, dx);
+    const inRing = d <= r && d >= r - stroke && !(ang > -1.0 && ang < -0.15);
+    const inBar = x >= cx && x <= cx + r && y >= cy - stroke * 0.45 && y <= cy + stroke * 0.45;
     if (inBar || inRing) alpha[y * size + x] = 255;
   }
   const p = Object.assign({}, Core.DEFAULTS, { texture: "grunge", scale: size * 1.2, shapeDistress: 30, innerDistress: 20, innerEdgeSize: 1, edgeRoughness: 0 });

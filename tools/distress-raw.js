@@ -1,4 +1,4 @@
-// Applies the MS Distress engine to a raw alpha mask (for showcase images).
+// Applies the Grime engine to a raw alpha mask (for showcase images).
 // Usage: node tools/distress-raw.js <alpha.raw> <width> <height> '<params-json>' <mask.raw> [<colour.raw>]
 const fs = require("fs");
 const path = require("path");

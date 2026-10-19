@@ -1,5 +1,5 @@
 "use strict";
-// MS Distress – core engine.
+// Grime – core engine.
 // Procedural textures + mask computation. Plain JavaScript without Photoshop dependencies,
 // so the same code runs in the plugin (UXP) and in the test renderer (Node).
 

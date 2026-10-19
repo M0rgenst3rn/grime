@@ -1,4 +1,4 @@
-// Ink bleed of the MS Distress engine on a raw alpha mask (for showcase images).
+// Ink bleed of the Grime engine on a raw alpha mask (for showcase images).
 // Usage: node tools/bleed-raw.js <alpha.raw> <width> <height> '<params-json>' <mask.raw> <bleed.raw>
 // Writes the distress mask (width × height) and the bleed alpha ((width + 2·pad) × (height + 2·pad));
 // prints {"pad": n}.

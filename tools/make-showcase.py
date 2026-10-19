@@ -19,10 +19,10 @@ FONTS = "/System/Library/Fonts/Supplemental/"
 IMPACT = FONTS + "Impact.ttf"
 BLACK = FONTS + "Arial Black.ttf"
 LABEL = "/System/Library/Fonts/Helvetica.ttc"
-# outside macOS: fonts from the environment (MSD_IMPACT, MSD_BLACK, MSD_LABEL)
-IMPACT = os.environ.get("MSD_IMPACT", IMPACT)
-BLACK = os.environ.get("MSD_BLACK", BLACK)
-LABEL = os.environ.get("MSD_LABEL", LABEL)
+# outside macOS: fonts from the environment (GRIME_IMPACT, GRIME_BLACK, GRIME_LABEL)
+IMPACT = os.environ.get("GRIME_IMPACT", IMPACT)
+BLACK = os.environ.get("GRIME_BLACK", BLACK)
+LABEL = os.environ.get("GRIME_LABEL", LABEL)
 
 PAPER = (238, 230, 212)
 INK = (28, 26, 30)
@@ -90,7 +90,7 @@ def hero():
     W, H = 1600, 640
     img = paper(W, H)
     rows = [
-        ("MS DISTRESS", {"texture": "stamp", "scale": 140, "shapeDistress": 45, "innerDistress": 28, "innerEdgeSize": 10, "edgeRoughness": 5, "seed": 3}, (196, 40, 36)),
+        ("GRIME", {"texture": "stamp", "scale": 140, "shapeDistress": 45, "innerDistress": 28, "innerEdgeSize": 10, "edgeRoughness": 5, "seed": 3}, (196, 40, 36)),
         ("PLUGIN FOR PHOTOSHOP", {"texture": "worn", "scale": 70, "shapeDistress": 22, "innerDistress": 10, "innerEdgeSize": 6, "edgeRoughness": 1.5, "seed": 11}, INK),
     ]
     y = 70

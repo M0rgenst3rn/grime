@@ -1,18 +1,18 @@
 <p align="center">
-  <img src="docs/images/hero.png" alt="Morgenstern Distress" width="100%">
+  <img src="docs/images/hero.png" alt="Grime" width="100%">
 </p>
 
 <p align="center">
   <b>Distressed, grunge and print looks for Photoshop – one click, non-destructive, on text, shapes and any layer.</b><br>
   <sub>Photoshop 2023 (24.2) or newer · UXP panel</sub><br>
-  <sub>Free tools by <b>Morgenstern</b> · <b>Morgenstern Distress</b> · <a href="https://github.com/M0rgenst3rn/ms-printer">Morgenstern Printer</a> · <a href="https://github.com/M0rgenst3rn/ms-render">Morgenstern Render</a> · <a href="https://github.com/M0rgenst3rn/ms-phase">Morgenstern Phase</a> · <a href="https://github.com/M0rgenst3rn/ms-glow">Morgenstern Glow</a> · <a href="https://github.com/M0rgenst3rn/ms-gradients">Morgenstern Gradients</a> · <a href="https://github.com/M0rgenst3rn/ms-grids">Morgenstern Grids</a></sub>
+  <sub>More tools by <b>Linus Leinberger</b> · <a href="https://github.com/M0rgenst3rn/afterglow">Afterglow</a> · <a href="https://github.com/M0rgenst3rn/asciiwave">Asciiwave</a> · <a href="https://github.com/M0rgenst3rn/gradient-library">Gradient Library</a> · <a href="https://github.com/M0rgenst3rn/gridwork">Gridwork</a> · <b>Grime</b> · <a href="https://github.com/M0rgenst3rn/headliner">Headliner</a> · <a href="https://github.com/M0rgenst3rn/misprint">Misprint</a> · <a href="https://github.com/M0rgenst3rn/seamline">Seamline</a> · <a href="https://github.com/M0rgenst3rn/vhold">Vhold</a></sub>
 </p>
 
 ---
 
-## What is Morgenstern Distress?
+## What is Grime?
 
-Morgenstern Distress is a panel plugin for Adobe Photoshop. It gives lettering, logos, shapes and image layers
+Grime is a panel plugin for Adobe Photoshop. It gives lettering, logos, shapes and image layers
 a worn look, like a rubber stamp, screen print, rust, cracks or scratches. You set the look with a few sliders
 and see it right away in the preview or live on the canvas.
 
@@ -20,7 +20,7 @@ The effect is created as a **layer mask**. So your text stays editable, and ⌘Z
 
 <table>
 <tr>
-<td width="38%" valign="top"><img src="docs/images/panel.png" alt="The Morgenstern Distress panel in Photoshop"></td>
+<td width="38%" valign="top"><img src="docs/images/panel.png" alt="The Grime panel in Photoshop"></td>
 <td valign="top">
 
 ### Highlights
@@ -109,7 +109,7 @@ With **Second** above the textures you lay a second texture over the first, with
    ```bash
    bash install-mac.sh
    ```
-4. Start Photoshop → **Plugins › MS Distress**
+4. Start Photoshop → **Plugins › Grime**
 
 The script packs the plugin and installs it with Adobe's own plugin installer. Creative Cloud then knows it
 and won't remove it again.
@@ -138,7 +138,7 @@ and won't remove it again.
 distress/            The plugin (loaded into Photoshop as is)
   manifest.json      Plugin description for Photoshop
   index.html         Panel UI
-  ms-ui.js/.css      Shared Morgenstern controls and design
+  ui.js/.css      Shared controls and design
   styles.css         Panel-specific styles
   icons/             Panel and plugin icons
   main.js            Photoshop side (masks, colour and ink bleed layers, Live mode, self-test)
@@ -157,7 +157,7 @@ node tools/render-test.js test.png
 ```
 
 Rebuild the images of this README (needs Python with Pillow and Node; fonts from macOS, or set
-`MSD_IMPACT` / `MSD_BLACK` / `MSD_LABEL`). `python3 tools/make-showcase.py bleed` renders a single image:
+`GRIME_IMPACT` / `GRIME_BLACK` / `GRIME_LABEL`). `python3 tools/make-showcase.py bleed` renders a single image:
 
 ```bash
 python3 tools/make-showcase.py
@@ -169,7 +169,7 @@ The panel in a browser, with Photoshop mocked: run `python3 -m http.server` in t
 
 ## Found a bug? Got an idea?
 
-Get in touch! The easiest way is **[Issues](https://github.com/M0rgenst3rn/ms-distress/issues)** here on GitHub:
+Get in touch! The easiest way is **[Issues](https://github.com/M0rgenst3rn/grime/issues)** here on GitHub:
 click **New issue** and briefly describe what happened. Your Photoshop version, operating system and a
 screenshot help a lot. All you need is a free GitHub account. Suggestions and feature requests are just as
 welcome.
@@ -187,5 +187,5 @@ Adobe and Photoshop are trademarks of Adobe Inc. This project is independent and
 
 ---
 
-<p align="center"><sub>Morgenstern Distress<br>
-Made by Linus Leinberger</sub></p>
+<p align="center"><sub>Grime<br>
+Made by Linus Leinberger · <a href="https://www.instagram.com/linusleinberger">Instagram @linusleinberger</a></sub></p>

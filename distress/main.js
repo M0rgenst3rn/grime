@@ -1,18 +1,18 @@
 "use strict";
-// MS Distress – Photoshop-UXP-Panel.
+// Grime – Photoshop-UXP-Panel.
 // Reads the pixels of the selected layer(s), computes a distress mask with core.js
 // and writes it back as a (non-destructive) layer mask.
 
 const { app, core, action, imaging } = require("photoshop");
 const { batchPlay } = action;
 const Core = require("./core.js");
-const UI = require("./ms-ui.js");
+const UI = require("./ui.js");
 const uxpStorage = require("uxp").storage;
 const lfs = uxpStorage.localFileSystem;
 
 const $ = (id) => document.getElementById(id);
-const STORE_KEY = "msdistress.state.v1";
-const PRESET_KEY = "msdistress.presets.v1";
+const STORE_KEY = "grime.state.v1";
+const PRESET_KEY = "grime.presets.v1";
 const COLOR_SUFFIX = " · Distress colour";
 // colour layer of a layer – also the German name of earlier versions
 const isColorLayerOf = (l, name) => l.name === name + COLOR_SUFFIX || l.name === name + " · Distress-Farbe";
@@ -183,7 +183,7 @@ async function readLayerUnmasked(ctx, doc, layer, sourceBounds, targetSize) {
   if (targetSize) opts.targetSize = targetSize;
   let disabled = false, hid = null;
   if (await hasUserMask(layer.id) && await maskEnabled(layer.id)) {
-    if (ctx) hid = await ctx.hostControl.suspendHistory({ documentID: doc.id, name: "MS Distress read" });
+    if (ctx) hid = await ctx.hostControl.suspendHistory({ documentID: doc.id, name: "Grime read" });
     await setMaskEnabled(layer.id, false);
     disabled = true;
   }
@@ -230,7 +230,7 @@ function fromBuf8(buf, doc) {
   return buf;
 }
 
-// ---------------------------------------------------------------- Controls (Morgenstern design, ms-ui.js)
+// ---------------------------------------------------------------- Controls (shared design, ui.js)
 
 function buildSliders() {
   for (const s of SLIDERS) {
@@ -400,7 +400,7 @@ function syncUI() {
   UI.syncSwitches();
 }
 
-const SEC_KEY = "msdistress.sections.v1";
+const SEC_KEY = "grime.sections.v1";
 const SEC_DEFAULT = { looks: true, texture: true, wear: true, color: false, bleed: false, fade: false, fine: false, more: false };
 function bindControls() {
   UI.sections(SEC_KEY, SEC_DEFAULT);
@@ -550,7 +550,7 @@ async function verifyCanvas() {
         r.geaenderteEinstellungen = applied ? diffParams(effectiveParams(paramsFor(i)), applied) : "unbekannt";
         report.push(r);
       }
-    }, { commandName: "MS Distress verify" });
+    }, { commandName: "Grime verify" });
   } catch (e) {
     report.push({ errors: e.message || String(e) });
   }
@@ -599,7 +599,7 @@ async function runSelfTest() {
   try {
     // test document + test layers
     await core.executeAsModal(async () => {
-      doc = await app.documents.add({ width: 700, height: 420, resolution: 72, mode: "RGBColorMode", fill: "white", name: "MS Distress self-test" });
+      doc = await app.documents.add({ width: 700, height: 420, resolution: 72, mode: "RGBColorMode", fill: "white", name: "Grime self-test" });
       await batchPlay([{ _obj: "make", _target: [{ _ref: "layer" }], using: { _obj: "layer", name: "Test Pixel" } }], {});
       const pl = doc.activeLayers[0];
       const W = 700, H = 230;
@@ -616,7 +616,7 @@ async function runSelfTest() {
           },
         }], {});
       } catch (e) { log("  text layer could not be created", String(e.message || e)); }
-    }, { commandName: "MS Distress prepare self-test" });
+    }, { commandName: "Grime prepare self-test" });
 
     const layers = allLayers(doc.layers).filter((l) => !l.isBackgroundLayer);
     const D = Object.assign({}, Core.DEFAULTS, { seed: 1337, varySeed: false });
@@ -665,7 +665,7 @@ async function runSelfTest() {
           info.push({ layer: l.name, below: below ? below.name : null, outside });
           if (want ? !(below && isBleedLayerOf(below, l.name) && outside > 0) : has) ok = false;
         }
-      }, { commandName: "MS Distress test" });
+      }, { commandName: "Grime test" });
       return { ok, info };
     };
     params = Object.assign({}, D, { bleedEnabled: true, bleedSpread: 6, bleedFibres: 60 });
@@ -695,14 +695,14 @@ async function runSelfTest() {
     const ai = states.findIndex((h) => h.id === historyStateId(doc));
     const before = ai > 0 ? states[ai - 1].id : null;
     const rl = await verifyAll(doc, layers);
-    results.push({ test: "Live: history combined", ok: before === s0 && states[ai].name === "MS Distress Live",
+    results.push({ test: "Live: history combined", ok: before === s0 && states[ai].name === "Grime Live",
       details: { vorErstemLive: s0, vorLetztemLive: before, aktuell: ai >= 0 ? states[ai].name : null } });
     results.push({ test: "Live: canvas = last setting (colour off)", ok: rl.every((x) => x.ok), details: rl });
 
     // undo: one step back removes the Live result
     await core.executeAsModal(async () => {
       await batchPlay([{ _obj: "select", _target: [{ _ref: "historyState", _enum: "ordinal", _value: "previous" }] }], {});
-    }, { commandName: "MS Distress test undo" });
+    }, { commandName: "Grime test undo" });
     liveLast = null;
     params = Object.assign({}, D, { texture: "grunge", texture2: "", colorEnabled: false });
     const ru = await verifyAll(doc, layers);
@@ -717,7 +717,7 @@ async function runSelfTest() {
         if (await hasUserMask(l.id)) removedOk = false;
         if (allLayers(doc.layers).some((x) => isColorLayerOf(x, l.name) || isBleedLayerOf(x, l.name))) removedOk = false;
       }
-    }, { commandName: "MS Distress test" });
+    }, { commandName: "Grime test" });
     results.push({ test: "Remove deletes mask, colour and ink bleed layers", ok: removedOk });
   } catch (e) {
     results.push({ test: "Aborted", ok: false, details: String(e && e.stack || e) });
@@ -734,13 +734,13 @@ async function runSelfTest() {
 }
 
 async function selectLayersModal(ids) {
-  await core.executeAsModal(async () => { await selectLayers(ids); }, { commandName: "MS Distress test" });
+  await core.executeAsModal(async () => { await selectLayers(ids); }, { commandName: "Grime test" });
 }
 async function verifyAll(doc, layers) {
   const out = [];
   await core.executeAsModal(async (ctx) => {
     for (let i = 0; i < layers.length; i++) out.push(await verifyLayer(ctx, doc, layers[i], paramsFor(i)));
-  }, { commandName: "MS Distress verify test" });
+  }, { commandName: "Grime verify test" });
   return out;
 }
 
@@ -754,7 +754,7 @@ async function pickColor() {
       res = await batchPlay([{
         _obj: "showColorPicker",
         _target: { _ref: "application" },
-        context: "MS Distress – Shape Color",
+        context: "Grime – Shape Color",
         color: { _obj: "RGBColor", red: c0.r, grain: c0.g, blue: c0.b },
       }], {});
     }, { commandName: "Pick colour" });
@@ -801,7 +801,7 @@ async function refreshPreviewSource() {
         alpha: extractAlpha(raw, comps, n), sb, pxScale: (sb.right - sb.left) / id.width,
       };
       id.dispose();
-    }, { commandName: "MS Distress preview" });
+    }, { commandName: "Grime preview" });
     ignoreEventsUntil = Date.now() + 600; // don't treat toggling the mask while reading as a change
     previewSrc = src;
     renderPreview();
@@ -910,7 +910,7 @@ async function loadCustomTexture(layerId) {
       }
       customTex = { layerId, w: id.width, h: id.height, data, k: (b.right - b.left) / id.width };
       id.dispose();
-    }, { commandName: "MS Distress load texture" });
+    }, { commandName: "Grime load texture" });
     setStatus(`Texture loaded from "${layer.name}".`);
     renderPreview();
   } catch (e) {
@@ -989,7 +989,7 @@ async function importImageTextures() {
           await d.closeWithoutSaving();
           if (prevDoc) { try { app.activeDocument = prevDoc; } catch (e) { /* egal */ } }
         }
-      }, { commandName: "MS Distress import texture" });
+      }, { commandName: "Grime import texture" });
       if (!tex) continue;
       const id = "img:" + Date.now().toString(36) + Math.floor(Math.random() * 1e5).toString(36);
       const fileName = id.slice(4) + ".bin";
@@ -1161,10 +1161,10 @@ async function applyDistress(live) {
       if (replaceLast) {
         await batchPlay([{ _obj: "select", _target: [{ _ref: "historyState", _enum: "ordinal", _value: "previous" }] }], {});
       }
-      const hid = await ctx.hostControl.suspendHistory({ documentID: doc.id, name: live ? "MS Distress Live" : "MS Distress" });
+      const hid = await ctx.hostControl.suspendHistory({ documentID: doc.id, name: live ? "Grime Live" : "Grime" });
       try {
         for (let i = 0; i < layers.length; i++) {
-          if (ctx.reportProgress) ctx.reportProgress({ value: i / layers.length, commandName: `MS Distress: ${layers[i].name}` });
+          if (ctx.reportProgress) ctx.reportProgress({ value: i / layers.length, commandName: `Grime: ${layers[i].name}` });
           try { await applyToLayer(doc, layers[i], paramsFor(i)); ok++; }
           catch (e) { errors.push(`${layers[i].name}: ${e.message || e}`); }
         }
@@ -1172,7 +1172,7 @@ async function applyDistress(live) {
       } finally {
         await ctx.hostControl.resumeHistory(hid);
       }
-    }, { commandName: "MS Distress apply" });
+    }, { commandName: "Grime apply" });
   } catch (e) {
     errors.push(e.message || String(e));
   }
@@ -1201,7 +1201,7 @@ async function removeDistress() {
   busy = true;
   try {
     await core.executeAsModal(async (ctx) => {
-      const hid = await ctx.hostControl.suspendHistory({ documentID: doc.id, name: "MS Distress remove" });
+      const hid = await ctx.hostControl.suspendHistory({ documentID: doc.id, name: "Grime remove" });
       try {
         for (const layer of layers) {
           const colorName = layer.name + COLOR_SUFFIX;
@@ -1215,7 +1215,7 @@ async function removeDistress() {
       } finally {
         await ctx.hostControl.resumeHistory(hid);
       }
-    }, { commandName: "MS Distress remove" });
+    }, { commandName: "Grime remove" });
     for (const id of ids) lastApplied.delete(doc.id + ":" + id);
     log("REMOVE", { layers: layers.map((l) => l.name) });
     setStatus("Mask(s), colour and ink bleed layers removed.");

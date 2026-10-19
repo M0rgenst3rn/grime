@@ -31,11 +31,11 @@ const base = f.getAttribute("data-plugin");
     const W = 1600, H = 600, art = document.createElement("canvas"); art.width = W; art.height = H;
     const x = art.getContext("2d");
     x.fillStyle = "#efe6d6"; x.fillRect(0, 0, W, H);
-    x.textAlign = "center"; x.fillStyle = "#c8201e"; x.font = "900 200px Impact, 'Archivo Black', 'Arial Black', sans-serif"; x.fillText("MS DISTRESS", W / 2, 290);
+    x.textAlign = "center"; x.fillStyle = "#c8201e"; x.font = "900 200px Impact, 'Archivo Black', 'Arial Black', sans-serif"; x.fillText("GRIME", W / 2, 290);
     x.fillStyle = "#151515"; x.font = "900 84px Impact, 'Archivo Black', 'Arial Black', sans-serif"; x.fillText("PLUGIN FOR PHOTOSHOP", W / 2, 480);
     const imgData = (buf, w, h, c) => ({ width: w, height: h, components: c, componentSize: 8, getData: async () => buf, dispose: () => {} });
-    const layer = { id: 2, name: "MS DISTRESS", kind: "pixel", bounds: { left: 0, top: 0, right: W, bottom: H }, boundsNoEffects: { left: 0, top: 0, right: W, bottom: H } };
-    fake.app.activeDocument = { id: 1, title: "MS Distress.psd", width: W, height: H, bitsPerChannel: "bitDepth8", layers: [layer], activeLayers: [layer] };
+    const layer = { id: 2, name: "GRIME", kind: "pixel", bounds: { left: 0, top: 0, right: W, bottom: H }, boundsNoEffects: { left: 0, top: 0, right: W, bottom: H } };
+    fake.app.activeDocument = { id: 1, title: "Grime.psd", width: W, height: H, bitsPerChannel: "bitDepth8", layers: [layer], activeLayers: [layer] };
     fake.app.documents = [fake.app.activeDocument];
     fake.imaging = {
       createImageDataFromBuffer: async (buf, o) => imgData(buf, o.width, o.height, o.components),
