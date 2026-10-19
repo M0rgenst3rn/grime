@@ -75,9 +75,9 @@ function loadParams() {
   try { return Object.assign({}, Core.DEFAULTS, JSON.parse(localStorage.getItem(STORE_KEY) || "{}")); }
   catch (e) { return Object.assign({}, Core.DEFAULTS); }
 }
-function saveParams() { try { localStorage.setItem(STORE_KEY, JSON.stringify(params)); } catch (e) { /* egal */ } }
+function saveParams() { try { localStorage.setItem(STORE_KEY, JSON.stringify(params)); } catch (e) { /* ignore */ } }
 function loadUserPresets() { try { return JSON.parse(localStorage.getItem(PRESET_KEY) || "{}"); } catch (e) { return {}; } }
-function saveUserPresets(p) { try { localStorage.setItem(PRESET_KEY, JSON.stringify(p)); } catch (e) { /* egal */ } }
+function saveUserPresets(p) { try { localStorage.setItem(PRESET_KEY, JSON.stringify(p)); } catch (e) { /* ignore */ } }
 
 // ---------------------------------------------------------------- Helpers
 
@@ -481,7 +481,7 @@ function showSyncHint() {
     const diff = diffParams(effectiveParams(paramsFor(0)), applied);
     if (diff.length) setStatus(`● Not on the canvas yet: ${diff.join(", ")} – click "Apply" or turn on Live.`);
     else setStatus("Canvas matches the settings.");
-  } catch (e) { /* egal */ }
+  } catch (e) { /* ignore */ }
 }
 
 // ---------------------------------------------------------------- Self-test
@@ -987,7 +987,7 @@ async function importImageTextures() {
           id.dispose();
         } finally {
           await d.closeWithoutSaving();
-          if (prevDoc) { try { app.activeDocument = prevDoc; } catch (e) { /* egal */ } }
+          if (prevDoc) { try { app.activeDocument = prevDoc; } catch (e) { /* ignore */ } }
         }
       }, { commandName: "MS Distress import texture" });
       if (!tex) continue;
@@ -1015,7 +1015,7 @@ async function deleteImageTexture(id) {
   const t = imageTextures.find((x) => x.id === id);
   if (!t) return;
   imageTextures = imageTextures.filter((x) => x.id !== id);
-  try { await (await (await texFolder()).getEntry(t.file)).delete(); } catch (e) { /* egal */ }
+  try { await (await (await texFolder()).getEntry(t.file)).delete(); } catch (e) { /* ignore */ }
   await saveTextureIndex();
   if (params.texture === id) params.texture = "grunge";
   if (params.texture2 === id) params.texture2 = "";
