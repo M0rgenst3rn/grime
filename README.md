@@ -103,16 +103,17 @@ With **Second** above the textures you lay a second texture over the first, with
 
 ### macOS (recommended)
 
-1. Download the repository (green button **Code → Download ZIP**) and unzip it
-2. Quit Photoshop
-3. Run this in Terminal inside the unzipped folder:
-   ```bash
-   bash install-mac.sh
-   ```
-4. Start Photoshop → **Plugins › Grime**
+Quit Photoshop, open Terminal, paste this and press Enter. It downloads the plugin to your Downloads folder,
+unzips it and installs it:
 
-The script packs the plugin and installs it with Adobe's own plugin installer. Creative Cloud then knows it
-and won't remove it again.
+```bash
+cd ~/Downloads && curl -fL -o grime.zip https://github.com/M0rgenst3rn/grime/archive/refs/heads/main.zip && unzip -oq grime.zip && cd grime-main && bash install-mac.sh
+```
+
+Then start Photoshop → **Plugins › Grime**
+
+Prefer to do it by hand? Click **Code → Download ZIP**, unzip it, open Terminal in the unzipped folder and run
+`bash install-mac.sh`.
 
 ### Alternative: UXP Developer Tool (macOS & Windows)
 
